@@ -29,6 +29,7 @@ dependencies:
 - text
 - generic-lens
 - lens
+- monoidal-containers
 
 ghc-options:
 - -Wall
@@ -44,6 +45,7 @@ default-extensions:
 - DeriveAnyClass
 - GeneralizedNewtypeDeriving
 - Arrows
+- OverloadedLabels
 
 library:
   source-dirs: src

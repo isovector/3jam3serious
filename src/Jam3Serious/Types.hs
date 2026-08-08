@@ -1,9 +1,16 @@
+{-# LANGUAGE OverloadedLabels #-}
+
 module Jam3Serious.Types
   ( module Jam3Serious.Types
   , SF
   ) where
 
-import FRP.Yampa (SF, DTime, arr)
+import GHC.Generics (Generic)
+import Control.Arrow
+import Data.Map (Map)
+import Data.Dynamic
+import Data.Map.Monoidal (MonoidalMap)
+import FRP.Yampa
 import SDL (V2)
 import qualified SDL
 
@@ -14,6 +21,7 @@ data Input = Input
   , i_mousepos :: SDL.Point SDL.V2 Int
   , i_dt :: DTime
   }
+  deriving stock Generic
 
 
 newtype Output = Output
@@ -36,4 +44,37 @@ mouseBtn = arr . flip i_mouse
 
 keyboard :: SDL.Scancode -> SF Input Bool
 keyboard = arr . flip i_keyboard
+
+
+
+data ObjInput = ObjInput
+  { oi_input :: Input
+  , oi_inbox :: [Mail]
+  , oi_me :: Name
+  }
+  deriving stock Generic
+
+data ObjOutput = ObjOtuput
+  { oo_outbox :: MonoidalMap Name [Dynamic]
+  }
+  deriving stock Generic
+
+data Name
+  deriving stock (Eq, Ord)
+
+data Mail = Mail
+  { from :: Name
+  , message :: Dynamic
+  }
+  deriving stock Generic
+
+data ObjectMap a = ObjectMap
+  { om_objects  :: Map Name a
+  , om_messages :: MonoidalMap Name [Mail]
+  }
+  deriving stock Functor
+  deriving stock Generic
+
+
+type Object = SF ObjInput ObjOutput
 

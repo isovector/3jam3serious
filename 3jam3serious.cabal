@@ -25,6 +25,7 @@ source-repository head
 
 library
   exposed-modules:
+      Jam3Serious.Router
       Jam3Serious.Types
       Jam3Serious.Yampa
       Lib
@@ -39,6 +40,7 @@ library
       DeriveAnyClass
       GeneralizedNewtypeDeriving
       Arrows
+      OverloadedLabels
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints
   build-depends:
       Yampa
@@ -47,6 +49,7 @@ library
     , generic-lens
     , lens
     , linear
+    , monoidal-containers
     , sdl2
     , text
   default-language: GHC2024
@@ -64,6 +67,7 @@ executable 3jam3serious-exe
       DeriveAnyClass
       GeneralizedNewtypeDeriving
       Arrows
+      OverloadedLabels
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       3jam3serious
@@ -73,6 +77,7 @@ executable 3jam3serious-exe
     , generic-lens
     , lens
     , linear
+    , monoidal-containers
     , sdl2
     , text
   default-language: GHC2024
