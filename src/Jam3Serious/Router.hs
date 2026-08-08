@@ -44,7 +44,7 @@ router' objs0 =
         . snd
       ) >>> notYet
     )
-    (\om f -> router' $ (f om) { om_messages = mempty })
+    (\om f -> router' $ f $ om { om_messages = mempty })
 
 
 

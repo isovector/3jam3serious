@@ -3,7 +3,7 @@ module Jam3Serious.Prelude
   ) where
 
 import Control.Arrow as X
-import Control.Lens as X ((+~), (<>~), (#), (&), view, set, over, (^.), (^..))
+import Control.Lens as X ((+~), (<>~), (.~), (%~), (#), (&), view, set, over, (^.), (^..))
 import Data.Bool as X (bool)
 import Data.Generics.Labels ()
 import Data.Map as X (Map)

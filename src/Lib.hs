@@ -6,6 +6,7 @@ import Data.Map qualified as M
 import Data.Text (pack)
 import FRP.Yampa
 import Jam3Serious.Player
+import Jam3Serious.Ball
 import Jam3Serious.Router
 import Jam3Serious.Types
 import Jam3Serious.Yampa
@@ -41,6 +42,13 @@ appSF = proc i -> do
   let bg = raw $ \renderer -> do
         SDL.rendererDrawColor renderer SDL.$= 0
         SDL.clear renderer
-  objs <- router (ObjectMap (M.singleton Player1 $ object (PlayerState 100 255) player) mempty) -< i
+  objs
+    <- router
+        ( flip ObjectMap mempty
+        $ M.fromList
+            [ (Player1, object (PlayerState 100 255) player)
+            , (Ball, object (BallState 80 (OriginRect 0 10)) ball)
+            ]
+        ) -< i
 
   returnA -< bg <> objs

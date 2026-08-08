@@ -25,6 +25,7 @@ instance Monoid (Event a) where
 deriving via (Ap (SF a) b) instance Semigroup b => Semigroup (SF a b)
 deriving via (Ap (SF a) b) instance Monoid b => Monoid (SF a b)
 deriving via (Ap (SF a) b) instance Num b => Num (SF a b)
+deriving via (Ap ((->) a) b) instance Num b => Num (a -> b)
 
 instance Profunctor SF where
   dimap f g sf = arr f >>> sf >>> arr g
@@ -78,8 +79,8 @@ data ObjOutput = ObjOtuput
   deriving (Semigroup, Monoid) via Generically (ObjOutput)
 
 data Name
-  = Player1 | Player2
-  deriving stock (Eq, Ord)
+  = Player1 | Player2 | Ball
+  deriving stock (Eq, Ord, Show)
 
 data Mail = Mail
   { from :: Name
@@ -100,9 +101,15 @@ type Object = SF ObjInput (ObjOutput, ObjState)
 type Obj a = SF (ObjInput, a) (ObjOutput, a)
 
 data ObjState = ObjState
-  {
+  { os_pos :: Maybe (V2 Double)
+  , os_collision :: Maybe (OriginRect Double)
   }
 
 class ToObjState a where
   toObjState :: a -> ObjState
 
+data OriginRect aff = OriginRect
+  { orect_size   :: V2 aff
+  , orect_offset :: V2 aff
+  }
+  deriving (Eq, Ord, Show, Functor, Generic)
