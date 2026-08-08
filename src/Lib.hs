@@ -2,8 +2,11 @@ module Lib (main) where
 
 import Control.Arrow
 import Control.Exception (bracket, bracket_)
+import Data.Map qualified as M
 import Data.Text (pack)
 import FRP.Yampa
+import Jam3Serious.Player
+import Jam3Serious.Router
 import Jam3Serious.Types
 import Jam3Serious.Yampa
 import qualified SDL
@@ -34,11 +37,10 @@ main = bracket_ SDL.initializeAll SDL.quit $ do
 
 
 appSF :: SF Input Output
-appSF = proc _ -> do
-  t <- time -< ()
+appSF = proc i -> do
   let bg = raw $ \renderer -> do
-        SDL.rendererDrawColor renderer SDL.$=
-          SDL.V4 (round (t * 25) `mod` 255) 0 0 0
+        SDL.rendererDrawColor renderer SDL.$= 0
         SDL.clear renderer
+  objs <- router (ObjectMap (M.singleton Player1 $ object (PlayerState 100 255) player) mempty) -< i
 
-  returnA -< bg
+  returnA -< bg <> objs

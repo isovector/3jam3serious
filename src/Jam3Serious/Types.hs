@@ -5,6 +5,7 @@ module Jam3Serious.Types
   , SF
   ) where
 
+import Data.Monoid
 import GHC.Generics (Generic, Generically(..))
 import Control.Arrow
 import Data.Map (Map)
@@ -14,6 +15,15 @@ import FRP.Yampa
 import SDL (V2)
 import qualified SDL
 
+instance Semigroup (Event a) where
+  (<>) = lMerge
+
+instance Monoid (Event a) where
+  mempty = noEvent
+
+deriving via (Ap (SF a) b) instance Semigroup b => Semigroup (SF a b)
+deriving via (Ap (SF a) b) instance Monoid b => Monoid (SF a b)
+deriving via (Ap (SF a) b) instance Num b => Num (SF a b)
 
 data Input = Input
   { i_keyboard :: SDL.Scancode -> Bool
@@ -60,7 +70,7 @@ data ObjOutput = ObjOtuput
   , oo_output :: Output
   }
   deriving stock (Generic)
-  deriving (Semigroup) via Generically (ObjOutput)
+  deriving (Semigroup, Monoid) via Generically (ObjOutput)
 
 data Name
   = Player1 | Player2
