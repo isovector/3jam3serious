@@ -1,29 +1,22 @@
 module Jam3Serious.Player where
 
-import Data.Bool
-import Control.Arrow
-import Control.Lens ((+~), (&))
-import Data.Generics.Labels ()
-import Data.Word
-import FRP.Yampa
-import GHC.Generics
-import Jam3Serious.Types
-import Linear.V2
-import Linear.V4
-import Linear.Vector ((^*))
+import Jam3Serious.Prelude
 import qualified SDL
+
 
 onPress :: Num a => SDL.Scancode -> a -> SF Input a
 onPress field a = keyboard field >>> arr (bool 0 a)
 
+
 arrows :: Num a => SF Input (V2 a)
 arrows =
   sum
-    [ onPress SDL.ScancodeUp    (V2 0 (-1))
-    , onPress SDL.ScancodeDown  (V2 0 1)
+    [ onPress SDL.ScancodeUp    (V2 0    (-1))
+    , onPress SDL.ScancodeDown  (V2 0    1)
     , onPress SDL.ScancodeLeft  (V2 (-1) 0)
     , onPress SDL.ScancodeRight (V2 1    0)
     ]
+
 
 data PlayerState = PlayerState
   { ps_location :: V2 Double
@@ -33,6 +26,7 @@ data PlayerState = PlayerState
 
 instance ToObjState PlayerState where
   toObjState _ = ObjState
+
 
 player :: Obj PlayerState
 player = proc (oi, ps) -> do

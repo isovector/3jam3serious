@@ -1,13 +1,9 @@
 module Jam3Serious.Router where
 
-import Control.Arrow
-import Control.Lens ((<>~))
-import Data.Generics.Labels ()
+import Jam3Serious.Prelude
 import Data.Map qualified as M
 import Data.Map.Monoidal qualified as MM
 import Data.Monoid
-import FRP.Yampa
-import Jam3Serious.Types
 
 
 router

@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedLabels #-}
+{-# OPTIONS_GHC -Wno-orphans  #-}
 
 module Jam3Serious.Types
   ( module Jam3Serious.Types
