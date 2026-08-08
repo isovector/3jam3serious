@@ -25,6 +25,8 @@ source-repository head
 
 library
   exposed-modules:
+      Jam3Serious.Player
+      Jam3Serious.Prelude
       Jam3Serious.Router
       Jam3Serious.Types
       Jam3Serious.Yampa
@@ -50,6 +52,7 @@ library
     , lens
     , linear
     , monoidal-containers
+    , profunctors
     , sdl2
     , text
   default-language: GHC2024
@@ -78,6 +81,7 @@ executable 3jam3serious-exe
     , lens
     , linear
     , monoidal-containers
+    , profunctors
     , sdl2
     , text
   default-language: GHC2024

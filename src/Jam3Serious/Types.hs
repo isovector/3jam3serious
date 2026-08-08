@@ -5,13 +5,14 @@ module Jam3Serious.Types
   , SF
   ) where
 
-import Data.Monoid
-import GHC.Generics (Generic, Generically(..))
 import Control.Arrow
-import Data.Map (Map)
 import Data.Dynamic
+import Data.Map (Map)
 import Data.Map.Monoidal (MonoidalMap)
+import Data.Monoid
+import Data.Profunctor
 import FRP.Yampa
+import GHC.Generics (Generic, Generically(..))
 import SDL (V2)
 import qualified SDL
 
@@ -24,6 +25,10 @@ instance Monoid (Event a) where
 deriving via (Ap (SF a) b) instance Semigroup b => Semigroup (SF a b)
 deriving via (Ap (SF a) b) instance Monoid b => Monoid (SF a b)
 deriving via (Ap (SF a) b) instance Num b => Num (SF a b)
+
+instance Profunctor SF where
+  dimap f g sf = arr f >>> sf >>> arr g
+
 
 data Input = Input
   { i_keyboard :: SDL.Scancode -> Bool

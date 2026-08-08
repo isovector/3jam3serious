@@ -22,14 +22,15 @@ description:         Please see the README on GitHub at <https://github.com/gith
 
 dependencies:
 - base >= 4.7 && < 5
-- sdl2
 - Yampa
 - containers
-- linear
-- text
 - generic-lens
 - lens
+- linear
 - monoidal-containers
+- profunctors
+- sdl2
+- text
 
 ghc-options:
 - -Wall
