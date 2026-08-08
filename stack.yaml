@@ -1,0 +1,12 @@
+snapshot: lts-24.35
+
+packages:
+- .
+
+extra-deps:
+- sdl2-2.5.5.1
+
+nix:
+  packages:
+    - pkg-config
+    - SDL2
