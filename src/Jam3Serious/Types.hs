@@ -5,7 +5,7 @@ module Jam3Serious.Types
   , SF
   ) where
 
-import GHC.Generics (Generic)
+import GHC.Generics (Generic, Generically(..))
 import Control.Arrow
 import Data.Map (Map)
 import Data.Dynamic
@@ -51,15 +51,19 @@ data ObjInput = ObjInput
   { oi_input :: Input
   , oi_inbox :: [Mail]
   , oi_me :: Name
+  , oi_everyone :: Map Name ObjState
   }
-  deriving stock Generic
+  deriving stock (Generic)
 
 data ObjOutput = ObjOtuput
   { oo_outbox :: MonoidalMap Name [Dynamic]
+  , oo_output :: Output
   }
-  deriving stock Generic
+  deriving stock (Generic)
+  deriving (Semigroup) via Generically (ObjOutput)
 
 data Name
+  = Player1 | Player2
   deriving stock (Eq, Ord)
 
 data Mail = Mail
@@ -72,9 +76,18 @@ data ObjectMap a = ObjectMap
   { om_objects  :: Map Name a
   , om_messages :: MonoidalMap Name [Mail]
   }
-  deriving stock Functor
+  deriving stock (Functor, Foldable, Traversable)
   deriving stock Generic
+  deriving (Semigroup, Monoid) via Generically (ObjectMap a)
 
 
-type Object = SF ObjInput ObjOutput
+type Object = SF ObjInput (ObjOutput, ObjState)
+type Obj a = SF (ObjInput, a) (ObjOutput, a)
+
+data ObjState = ObjState
+  {
+  }
+
+class ToObjState a where
+  toObjState :: a -> ObjState
 
