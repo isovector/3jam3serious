@@ -1,8 +1,9 @@
 module Jam3Serious.Player where
 
-import Data.Map.Monoidal qualified as MM
+import Data.Monoid
 import Jam3Serious.Ball
 import Jam3Serious.Prelude
+import Jam3Serious.Mail
 import qualified SDL
 
 
@@ -44,7 +45,7 @@ player = proc (oi, ps) -> do
   dpos <- arr arrows -< oi_input oi
   let V2 x y = ps_location ps
 
-  let e = mapMaybe (fromDynamic @PickMeUp . message) $ oi_inbox oi
+  pickup <- onMail @PickMeUp -< oi
 
   returnA -<
     ( mempty
@@ -55,15 +56,11 @@ player = proc (oi, ps) -> do
                 (SDL.P (fmap round $ V2 x y))
                 (V2 50 50)
         , oo_outbox =
-            case null e of
-              True -> mempty
-              False -> MM.singleton Ball $ pure $ toDyn PickedUp
+            on pickup $ \m -> send (from m) PickedUp
         }
     , ps
         & #ps_location +~ dpos ^* (50 * i_dt (oi_input oi))
-        & #ps_color %~
-            case null e of
-              True -> id
-              False -> const $ V4 0 128 255 255
+        & #ps_color %~ appEndo (on pickup $ const $ Endo $ const $ V4 0 128 255 255)
     )
+
 

@@ -22,6 +22,8 @@ deriving via (Ap (SF a) b) instance Semigroup b => Semigroup (SF a b)
 deriving via (Ap (SF a) b) instance Monoid b => Monoid (SF a b)
 deriving via (Ap (SF a) b) instance Num b => Num (SF a b)
 deriving via (Ap ((->) a) b) instance Num b => Num (a -> b)
+deriving stock instance Foldable Event
+deriving stock instance Traversable Event
 
 instance Profunctor SF where
   dimap f g sf = arr f >>> sf >>> arr g
@@ -61,7 +63,7 @@ keyboard = arr . flip i_keyboard
 
 data ObjInput = ObjInput
   { oi_input :: Input
-  , oi_inbox :: [Mail]
+  , oi_inbox :: [Mail Dynamic]
   , oi_me :: Name
   , oi_everyone :: Map Name ObjState
   }
@@ -74,19 +76,29 @@ data ObjOutput = ObjOtuput
   deriving stock (Generic)
   deriving (Semigroup, Monoid) via Generically (ObjOutput)
 
-data Name
-  = Player1 | Player2 | Ball
-  deriving stock (Eq, Ord, Show)
+data PlayerNum = P1 | P2
+  deriving stock (Eq, Ord, Show, Enum, Bounded, Generic)
 
-data Mail = Mail
+otherPlayerNum :: PlayerNum -> PlayerNum
+otherPlayerNum P1 = P2
+otherPlayerNum P2 = P1
+
+data Team = T1 | T2
+  deriving stock (Eq, Ord, Show, Enum, Bounded, Generic)
+
+data Name
+  = Player Team PlayerNum | Ball
+  deriving stock (Eq, Ord, Show, Generic)
+
+data Mail a = Mail
   { from :: Name
-  , message :: Dynamic
+  , message :: a
   }
-  deriving stock Generic
+  deriving stock (Generic, Functor, Foldable, Traversable)
 
 data ObjectMap a = ObjectMap
   { om_objects  :: Map Name a
-  , om_messages :: MonoidalMap Name [Mail]
+  , om_messages :: MonoidalMap Name [Mail Dynamic]
   }
   deriving stock (Functor, Foldable, Traversable)
   deriving stock Generic

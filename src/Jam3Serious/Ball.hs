@@ -1,5 +1,6 @@
 module Jam3Serious.Ball where
 
+import Jam3Serious.Mail
 import Data.Map qualified as M
 import Data.Map.Monoidal qualified as MM
 import Jam3Serious.Prelude
@@ -26,8 +27,8 @@ data PickedUp = PickedUp
 ball :: Obj BallState
 ball = proc (oi, bs) -> do
 
-  let e = mapMaybe (fromDynamic @PickedUp . message) $ oi_inbox oi
-  color <- hold (V4 255 128 0 255) -< maybe empty pure $ (0 <$) $ listToMaybe e
+  pickup <- onMail @PickedUp -< oi
+  color <- hold (V4 255 128 0 255) -< 0 <$ pickup
 
   t <- time -< ()
 
@@ -38,6 +39,7 @@ ball = proc (oi, bs) -> do
             SDL.fillRect r $ Just $ fmap round $ mkRect (bs_pos bs) (bs_collision bs)
         , oo_outbox =
             broadcastAt
+              #_Player
               PickMeUp
               (mkRect (bs_pos bs) (bs_collision bs))
               (oi_everyone oi)
@@ -46,10 +48,16 @@ ball = proc (oi, bs) -> do
     )
 
 
-broadcastAt :: Typeable a => a -> SDL.Rectangle Double -> Map Name ObjState -> MonoidalMap Name [Dynamic]
-broadcastAt a rect oss = MM.fromList $ do
+broadcastAt
+    :: Typeable a
+    => Prism' Name x
+    -> a
+    -> SDL.Rectangle Double
+    -> Map Name ObjState
+    -> MonoidalMap Name [Dynamic]
+broadcastAt prism a rect oss = MM.fromList $ do
   (who, os) <- M.toList oss
-  guard $ who /= Ball
+  guard $ has prism who
   pos <- maybeToList $ os_pos os
   guard $ posInRect pos rect
 

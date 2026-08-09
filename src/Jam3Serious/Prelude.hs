@@ -4,7 +4,7 @@ module Jam3Serious.Prelude
 
 import Control.Applicative as X
 import Control.Arrow as X
-import Control.Lens as X ((+~), (<>~), (.~), (%~), (#), (&), view, set, over, (^.), (^..))
+import Control.Lens as X ((+~), (<>~), (.~), (%~), (#), (&), view, set, over, (^.), (^..), Lens', Prism', Traversal', has)
 import Control.Monad as X
 import Data.Bool as X (bool)
 import Data.Dynamic as X (Dynamic, toDyn, fromDynamic, Typeable)

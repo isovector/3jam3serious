@@ -46,7 +46,7 @@ appSF = proc i -> do
     <- router
         ( flip ObjectMap mempty
         $ M.fromList
-            [ (Player1, object (PlayerState 100 255) player)
+            [ (Player T1 P1, object (PlayerState 100 255) player)
             , (Ball, object (BallState 80 (OriginRect 0 10)) ball)
             ]
         ) -< i
