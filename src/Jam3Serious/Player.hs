@@ -6,6 +6,7 @@ import Data.Map qualified as M
 import Data.Monoid
 import Jam3Serious.Ball
 import Jam3Serious.Mail
+import Jam3Serious.Geometry
 import Jam3Serious.Prelude
 import Jam3Serious.Router (object)
 import qualified SDL
@@ -75,6 +76,10 @@ player = proc (oi, ps) -> do
   returnA -<
     ( mempty
         { oo_output = raw $ \r -> do
+            drawCapsule
+              (Capsule 20 0 10 $ 0 & _xy .~ ps_pos ps)
+              (ps_color ps)
+              r
             SDL.rendererDrawColor r SDL.$= ps_color ps
             SDL.fillRect r $ Just $
               SDL.Rectangle

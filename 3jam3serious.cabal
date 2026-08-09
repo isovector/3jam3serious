@@ -26,6 +26,7 @@ source-repository head
 library
   exposed-modules:
       Jam3Serious.Ball
+      Jam3Serious.Geometry
       Jam3Serious.Mail
       Jam3Serious.Player
       Jam3Serious.Prelude
@@ -56,6 +57,7 @@ library
     , monoidal-containers
     , profunctors
     , sdl2
+    , sdl2-gfx
     , text
   default-language: GHC2024
 
@@ -85,5 +87,6 @@ executable 3jam3serious-exe
     , monoidal-containers
     , profunctors
     , sdl2
+    , sdl2-gfx
     , text
   default-language: GHC2024

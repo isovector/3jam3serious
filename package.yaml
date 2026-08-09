@@ -30,6 +30,7 @@ dependencies:
 - monoidal-containers
 - profunctors
 - sdl2
+- sdl2-gfx
 - text
 
 ghc-options:

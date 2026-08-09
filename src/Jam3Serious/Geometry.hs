@@ -1,6 +1,16 @@
+{-# LANGUAGE ViewPatterns #-}
+
 module Jam3Serious.Geometry where
 
+import Debug.Trace
+import Foreign.C.Types        (CInt)
+import qualified SDL.Raw.Primitive
+import SDL.Internal.Types     (Renderer(..))
+import Linear.V4
+import Data.Word
 import Jam3Serious.Types
+import SDL qualified
+import SDL.Primitive
 
 
 pointInCapsule :: (Num a, Ord a) => V3 a -> Capsule a -> Bool
@@ -43,4 +53,23 @@ capsuleInCapsule
 (==>) :: Bool -> Bool -> Bool
 x ==> y = not x || y
 infix 0 ==>
+
+
+v3ToV2 :: V3 Double -> V2 Double
+v3ToV2 (V3 x y z) = V2 x ((y / 2) - z)
+
+fillCircle' :: Renderer -> Pos -> Radius -> Color -> IO CInt
+fillCircle' (Renderer p) (V2 x y) rad (V4 r g b a) =
+  SDL.Raw.Primitive.filledCircle
+    p (traceShowId $ fromIntegral x) (traceShowId $ fromIntegral y) (fromIntegral rad) r g b 255
+
+drawCapsule :: Capsule Double -> V4 Word8 -> SDL.Renderer -> IO ()
+drawCapsule (Capsule t b (round -> r) xyz) color renderer = do
+  let top = fmap round $ v3ToV2 $ xyz + V3 0 0 t
+      bot = fmap round $ v3ToV2 $ xyz - V3 0 0 b
+  pixel renderer (fmap round $ v3ToV2 xyz) color
+  line renderer (top - V2 r 0) (bot - V2 r 0) color
+  line renderer (top + V2 r 0) (bot + V2 r 0) color
+  arc renderer top r 180 0 color
+  arc renderer bot r 0 180 color
 
