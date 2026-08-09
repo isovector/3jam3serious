@@ -26,6 +26,7 @@ source-repository head
 library
   exposed-modules:
       Jam3Serious.Ball
+      Jam3Serious.Mail
       Jam3Serious.Player
       Jam3Serious.Prelude
       Jam3Serious.Router

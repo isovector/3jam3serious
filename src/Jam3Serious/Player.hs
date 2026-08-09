@@ -7,17 +7,17 @@ import Jam3Serious.Mail
 import qualified SDL
 
 
-onPress :: Num a => SDL.Scancode -> a -> Input -> a
+onPress :: Num a => Scancode -> a -> Input -> a
 onPress field a = flip i_keyboard field >>> arr (bool 0 a)
 
 
 arrows :: Num a => Input -> V2 a
 arrows =
   sum
-    [ onPress SDL.ScancodeUp    (V2 0    (-1))
-    , onPress SDL.ScancodeDown  (V2 0    1)
-    , onPress SDL.ScancodeLeft  (V2 (-1) 0)
-    , onPress SDL.ScancodeRight (V2 1    0)
+    [ onPress ScancodeUp    $ V2 0    (-1)
+    , onPress ScancodeDown  $ V2 0    1
+    , onPress ScancodeLeft  $ V2 (-1) 0
+    , onPress ScancodeRight $ V2 1    0
     ]
 
 data Controller = Controller

@@ -1,5 +1,6 @@
 module Jam3Serious.Prelude
   ( module X
+  , module Jam3Serious.Prelude
   ) where
 
 import Control.Applicative as X
@@ -21,4 +22,22 @@ import Linear.V2 as X
 import Linear.V3 as X
 import Linear.V4 as X
 import Linear.Vector as X
+import SDL as X (MouseButton(..), Point(..), unP)
+import SDL.Input.Keyboard.Codes as X
+
+
+mousePos :: SF Input (V2 Int)
+mousePos = arr $ unP . i_mousepos
+
+
+mouseBtn :: MouseButton -> SF Input Bool
+mouseBtn = arr . flip i_mouse
+
+
+keyboard :: Scancode -> SF Input Bool
+keyboard = arr . flip i_keyboard
+
+
+keypress :: Scancode -> SF Input (Event ())
+keypress c = keyboard c >>> edge
 

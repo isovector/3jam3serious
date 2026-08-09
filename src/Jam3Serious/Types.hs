@@ -48,16 +48,6 @@ raw :: (SDL.Renderer -> IO ()) -> Output
 raw = Output
 
 
-mousePos :: SF Input (V2 Int)
-mousePos = arr $ SDL.unP . i_mousepos
-
-
-mouseBtn :: SDL.MouseButton -> SF Input Bool
-mouseBtn = arr . flip i_mouse
-
-
-keyboard :: SDL.Scancode -> SF Input Bool
-keyboard = arr . flip i_keyboard
 
 
 
