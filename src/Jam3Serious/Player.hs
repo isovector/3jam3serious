@@ -55,8 +55,7 @@ player = proc (oi, ps) -> do
               SDL.Rectangle
                 (SDL.P (fmap round $ V2 x y))
                 (V2 50 50)
-        , oo_outbox =
-            on pickup $ \m -> send (from m) PickedUp
+        , oo_outbox = on pickup $ respond PickedUp
         }
     , ps
         & #ps_location +~ dpos ^* (50 * i_dt (oi_input oi))

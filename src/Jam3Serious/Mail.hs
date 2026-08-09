@@ -20,3 +20,7 @@ on = flip foldMap
 send :: Typeable a => Name -> a -> MonoidalMap Name [Dynamic]
 send n = MM.singleton n . pure . toDyn
 
+
+respond :: Typeable a => a -> Mail b -> MonoidalMap Name [Dynamic]
+respond a = flip send a . from
+
