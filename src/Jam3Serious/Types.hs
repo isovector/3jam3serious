@@ -2,6 +2,8 @@
 
 module Jam3Serious.Types
   ( module Jam3Serious.Types
+  , V2(..)
+  , V3(..)
   , SF
   ) where
 
@@ -12,8 +14,8 @@ import Data.Map.Monoidal (MonoidalMap)
 import Data.Monoid
 import Data.Profunctor
 import FRP.Yampa
-import GHC.Generics (Generic, Generically(..))
-import SDL (V2)
+import GHC.Generics (Generic, Generic1, Generically(..), Generically1(..))
+import SDL (V2(..), V3(..))
 import qualified SDL
 
 deriving via (Ap Event a) instance Semigroup a => Semigroup (Event a)
@@ -118,3 +120,16 @@ data OriginRect aff = OriginRect
   , orect_offset :: V2 aff
   }
   deriving (Eq, Ord, Show, Functor, Generic)
+
+data Capsule a = Capsule
+  { c_top :: a
+    -- ^ Height above 'c_pos'
+  , c_bottom :: a
+    -- ^ Height below 'c_pos'
+  , c_radius :: a
+    -- ^ Radius of the capsule
+  , c_pos :: V3 a
+  }
+  deriving stock (Generic, Generic1, Functor, Foldable, Traversable)
+  deriving Applicative via Generically1 Capsule
+
