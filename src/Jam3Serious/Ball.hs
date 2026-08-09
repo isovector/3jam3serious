@@ -6,9 +6,17 @@ import Data.Map.Monoidal qualified as MM
 import Jam3Serious.Prelude
 import qualified SDL
 
+data BState
+  = FreeBall
+  | Passing Name
+  deriving stock (Generic, Eq, Ord, Show)
+
+
 data BallState = BallState
   { bs_pos :: V2 Double
+  , bs_vel :: V2 Double
   , bs_collision :: OriginRect Double
+  , bs_state :: BState
   }
   deriving Generic
 
@@ -26,10 +34,7 @@ data PickedUp = PickedUp
 
 ball :: Obj BallState
 ball = proc (oi, bs) -> do
-
   pickup <- onMail @PickedUp -< oi
-
-  t <- time -< ()
 
   returnA -<
     ( mempty
@@ -38,30 +43,43 @@ ball = proc (oi, bs) -> do
             SDL.fillRect r $ Just $ fmap round $ mkRect (bs_pos bs) (bs_collision bs)
         , oo_outbox =
             broadcastAt
-              #_Player
+              (
+                case bs_state bs of
+                  FreeBall -> has #_Player
+                  Passing from -> \n -> has #_Player n && n /= from
+              )
               PickMeUp
               (mkRect (bs_pos bs) (bs_collision bs))
               (oi_everyone oi)
         , oo_commands = on pickup $ const $ pure Die
         }
-    , bs & #bs_pos . _x .~ cos t * 200
+    , bs & #bs_pos +~ bs_vel bs ^* i_dt (oi_input oi)
     )
 
 
 broadcastAt
     :: Typeable a
-    => Prism' Name x
+    => (Name -> Bool)
     -> a
     -> SDL.Rectangle Double
     -> Map Name ObjState
     -> MonoidalMap Name [Dynamic]
-broadcastAt prism a rect oss = MM.fromList $ do
+broadcastAt p a rect oss = MM.fromList $ do
   (who, os) <- M.toList oss
-  guard $ has prism who
+  guard $ p who
   pos <- maybeToList $ os_pos os
   guard $ posInRect pos rect
 
   pure (who, pure $ toDyn a)
+
+
+ballState :: V2 Double -> V2 Double -> BState -> BallState
+ballState pos dir bs = BallState
+  { bs_pos = pos
+  , bs_vel = dir
+  , bs_collision = OriginRect 0 10
+  , bs_state = bs
+  }
 
 
 mkRect :: Num a => V2 a -> OriginRect a -> SDL.Rectangle a
