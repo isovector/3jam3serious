@@ -1,10 +1,7 @@
 module Jam3Serious.Ball where
 
-import Control.Monad
-import Data.Dynamic
 import Data.Map qualified as M
 import Data.Map.Monoidal qualified as MM
-import Data.Maybe
 import Jam3Serious.Prelude
 import qualified SDL
 
@@ -12,6 +9,7 @@ data BallState = BallState
   { bs_pos :: V2 Double
   , bs_collision :: OriginRect Double
   }
+  deriving Generic
 
 instance ToObjState BallState where
   toObjState ps = ObjState
@@ -29,7 +27,9 @@ ball :: Obj BallState
 ball = proc (oi, bs) -> do
 
   let e = mapMaybe (fromDynamic @PickedUp . message) $ oi_inbox oi
-  color <- hold (V4 255 128 0 255) -< maybe mempty pure $ (0 <$) $ listToMaybe e
+  color <- hold (V4 255 128 0 255) -< maybe empty pure $ (0 <$) $ listToMaybe e
+
+  t <- time -< ()
 
   returnA -<
     ( mempty
@@ -42,7 +42,7 @@ ball = proc (oi, bs) -> do
               (mkRect (bs_pos bs) (bs_collision bs))
               (oi_everyone oi)
         }
-    , bs
+    , bs & #bs_pos . _x .~ cos t * 200
     )
 
 

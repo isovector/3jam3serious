@@ -1,8 +1,6 @@
 module Jam3Serious.Player where
 
 import Data.Map.Monoidal qualified as MM
-import Data.Dynamic
-import Data.Maybe (mapMaybe)
 import Jam3Serious.Ball
 import Jam3Serious.Prelude
 import qualified SDL

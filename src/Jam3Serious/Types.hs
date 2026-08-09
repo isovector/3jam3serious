@@ -16,12 +16,8 @@ import GHC.Generics (Generic, Generically(..))
 import SDL (V2)
 import qualified SDL
 
-instance Semigroup (Event a) where
-  (<>) = lMerge
-
-instance Monoid (Event a) where
-  mempty = noEvent
-
+deriving via (Ap Event a) instance Semigroup a => Semigroup (Event a)
+deriving via (Ap Event a) instance Monoid a => Monoid (Event a)
 deriving via (Ap (SF a) b) instance Semigroup b => Semigroup (SF a b)
 deriving via (Ap (SF a) b) instance Monoid b => Monoid (SF a b)
 deriving via (Ap (SF a) b) instance Num b => Num (SF a b)

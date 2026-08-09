@@ -54,6 +54,7 @@ decodeOutput n oo = mconcat
       #om_messages <>~ MM.singleton to (fmap (Mail n) dyns)
   ]
 
+
 object :: ToObjState a => a -> Obj a -> Object
 object a0 obj = loopPre a0 $ obj >>> arr (\(oo, a) -> ((oo, toObjState a), a))
 
