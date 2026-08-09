@@ -71,10 +71,17 @@ data ObjInput = ObjInput
 
 data ObjOutput = ObjOtuput
   { oo_outbox :: MonoidalMap Name [Dynamic]
+  , oo_commands :: [Command]
   , oo_output :: Output
   }
   deriving stock (Generic)
   deriving (Semigroup, Monoid) via Generically (ObjOutput)
+
+data Command
+  = Spawn Name Object
+  | Die
+  deriving stock (Generic)
+
 
 data PlayerNum = P1 | P2
   deriving stock (Eq, Ord, Show, Enum, Bounded, Generic)

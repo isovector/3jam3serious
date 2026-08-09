@@ -28,14 +28,13 @@ ball :: Obj BallState
 ball = proc (oi, bs) -> do
 
   pickup <- onMail @PickedUp -< oi
-  color <- hold (V4 255 128 0 255) -< 0 <$ pickup
 
   t <- time -< ()
 
   returnA -<
     ( mempty
         { oo_output = raw $ \r -> do
-            SDL.rendererDrawColor r SDL.$= color
+            SDL.rendererDrawColor r SDL.$= (V4 255 128 0 255)
             SDL.fillRect r $ Just $ fmap round $ mkRect (bs_pos bs) (bs_collision bs)
         , oo_outbox =
             broadcastAt
@@ -43,6 +42,7 @@ ball = proc (oi, bs) -> do
               PickMeUp
               (mkRect (bs_pos bs) (bs_collision bs))
               (oi_everyone oi)
+        , oo_commands = on pickup $ const $ pure Die
         }
     , bs & #bs_pos . _x .~ cos t * 200
     )
