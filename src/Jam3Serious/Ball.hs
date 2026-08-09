@@ -16,15 +16,14 @@ data BState
 data BallState = BallState
   { bs_pos :: V3 Double
   , bs_vel :: V3 Double
-  , bs_collision :: OriginRect Double
   , bs_state :: BState
   }
   deriving Generic
 
 instance ToObjState BallState where
   toObjState ps = ObjState
-    { os_pos = Nothing -- Just $ bs_pos ps
-    , os_collision = Nothing -- Just $ bs_collision ps
+    { os_pos = Just $ bs_pos ps
+    , os_collision = Just $ ballCapsule $ bs_pos ps
     }
 
 data PickMeUp = PickMeUp
@@ -32,6 +31,10 @@ data PickMeUp = PickMeUp
 
 data PickedUp = PickedUp
   deriving Show
+
+
+ballCapsule :: V3 Double -> Capsule Double
+ballCapsule = Capsule 0 0 0.24
 
 ball :: Obj BallState
 ball = proc (oi, bs) -> do
@@ -41,21 +44,19 @@ ball = proc (oi, bs) -> do
     ( mempty
         { oo_output = raw $ \r -> do
             drawCapsule
-              (Capsule 0 0 0.24 $ bs_pos bs)
+              (ballCapsule $ bs_pos bs)
               (V4 255 128 0 255)
               r
-            -- SDL.rendererDrawColor r SDL.$=
-            -- SDL.fillRect r $ Just $ fmap round $ mkRect (bs_pos bs) (bs_collision bs)
-        -- , oo_outbox =
-        --     broadcastAt
-        --       (
-        --         case bs_state bs of
-        --           FreeBall -> has #_Player
-        --           Passing from -> \n -> has #_Player n && n /= from
-        --       )
-        --       PickMeUp
-        --       (mkRect (bs_pos bs) (bs_collision bs))
-        --       (oi_everyone oi)
+        , oo_outbox =
+            broadcastAt
+              (
+                case bs_state bs of
+                  FreeBall -> has #_Player
+                  Passing from -> \n -> has #_Player n && n /= from
+              )
+              PickMeUp
+              (ballCapsule $ bs_pos bs)
+              (oi_everyone oi)
         , oo_commands = on pickup $ const $ pure Die
         }
     , bs & #bs_pos +~ bs_vel bs ^* i_dt (oi_input oi)
@@ -66,14 +67,14 @@ broadcastAt
     :: Typeable a
     => (Name -> Bool)
     -> a
-    -> SDL.Rectangle Double
+    -> Capsule Double
     -> Map Name ObjState
     -> MonoidalMap Name [Dynamic]
-broadcastAt p a rect oss = MM.fromList $ do
+broadcastAt p a cap oss = MM.fromList $ do
   (who, os) <- M.toList oss
   guard $ p who
-  pos <- maybeToList $ os_pos os
-  guard $ posInRect pos rect
+  cap' <- maybeToList $ os_collision os
+  guard $ capsuleInCapsule cap cap'
 
   pure (who, pure $ toDyn a)
 
@@ -82,7 +83,6 @@ ballState :: V3 Double -> V3 Double -> BState -> BallState
 ballState pos dir bs = BallState
   { bs_pos = pos
   , bs_vel = dir
-  , bs_collision = OriginRect 0 10
   , bs_state = bs
   }
 

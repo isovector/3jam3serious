@@ -108,8 +108,8 @@ type Object = SF ObjInput (ObjOutput, ObjState)
 type Obj a = SF (ObjInput, a) (ObjOutput, a)
 
 data ObjState = ObjState
-  { os_pos :: Maybe (V2 Double)
-  , os_collision :: Maybe (OriginRect Double)
+  { os_pos :: Maybe (V3 Double)
+  , os_collision :: Maybe (Capsule Double)
   }
 
 class ToObjState a where

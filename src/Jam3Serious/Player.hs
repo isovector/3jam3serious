@@ -9,7 +9,6 @@ import Jam3Serious.Mail
 import Jam3Serious.Geometry
 import Jam3Serious.Prelude
 import Jam3Serious.Router (object)
-import qualified SDL
 
 
 onPress :: Num a => Scancode -> a -> Input -> a
@@ -42,8 +41,7 @@ inputToController = proc (oi_input -> i) -> do
 
 
 data PlayerState = PlayerState
-  { ps_pos :: V2 Double
-  -- , ps_collision :: OriginRect Double
+  { ps_pos :: V3 Double
   , ps_color :: V4 Word8
   , ps_playable :: Bool
   }
@@ -52,8 +50,11 @@ data PlayerState = PlayerState
 instance ToObjState PlayerState where
   toObjState ps = ObjState
     { os_pos = Just $ ps_pos ps
-    , os_collision = Nothing -- Just $ ps_collision ps
+    , os_collision = Just $ playerCapsule $ ps_pos ps
     }
+
+playerCapsule :: V3 Double -> Capsule Double
+playerCapsule = Capsule 2 0 0.25
 
 
 player :: Obj PlayerState
@@ -77,18 +78,20 @@ player = proc (oi, ps) -> do
     ( mempty
         { oo_output = raw $ \r -> do
             drawCapsule
-              (Capsule 2 0 0.25 $ 0 & _xy .~ ps_pos ps)
+              (playerCapsule $ ps_pos ps)
               (ps_color ps)
               r
         , oo_outbox =
             on pickup $ respond PickedUp
-        -- , oo_commands =
-        --     on pass $ const $ pure $
-        --       Spawn Ball
-        --         $ object (ballState (ps_pos ps) (maybe 0 (subtract $ ps_pos ps) (os_pos teammate)) $ Passing $ oi_me oi) ball
+        , oo_commands =
+            on pass $ const $ pure $
+              Spawn Ball
+                $ object
+                    (ballState (ps_pos ps + V3 0 0 1.5) (maybe 0 (subtract $ ps_pos ps) (os_pos teammate)) $ Passing $ oi_me oi)
+                    ball
         }
     , ps
-        & #ps_pos +~ c_dir ctrl ^* (bool 3 6 (c_run ctrl) * i_dt (oi_input oi))
+        & #ps_pos +~ (0 & _xy .~ c_dir ctrl ) ^* (bool 3 6 (c_run ctrl) * i_dt (oi_input oi))
         & #ps_color %~ appEndo (on pickup $ const $ Endo $ const $ V4 0 128 255 255)
     )
 

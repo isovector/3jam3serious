@@ -1,6 +1,5 @@
 module Lib (main) where
 
-import Control.Arrow
 import Control.Exception (bracket, bracket_)
 import Data.Map qualified as M
 import Data.Text (pack)
@@ -43,9 +42,9 @@ appSF = proc i -> do
     <- router
         ( flip ObjectMap mempty
         $ M.fromList
-            [ (Player T1 P1, object (PlayerState (V2 (-1) 0) 255 True) player)
-            , (Player T1 P2, object (PlayerState (V2 1 0) 128 False) player)
-            , (Ball, object (ballState 0 0 FreeBall) ball)
+            [ (Player T1 P1, object (PlayerState (V3 (-1) 0 0) 255 True) player)
+            , (Player T1 P2, object (PlayerState (V3 1 0 0) 128 False) player)
+            , (Ball, object (ballState (V3 0 0 1) 0 FreeBall) ball)
             ]
         ) -< i
 
