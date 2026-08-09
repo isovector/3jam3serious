@@ -7,8 +7,8 @@ import FRP.Yampa
 import Jam3Serious.Ball
 import Jam3Serious.Camera
 import Jam3Serious.Player
+import Jam3Serious.Prelude
 import Jam3Serious.Router
-import Jam3Serious.Types
 import Jam3Serious.Yampa
 import qualified SDL
 
@@ -36,7 +36,7 @@ main = bracket_ SDL.initializeAll SDL.quit $ do
 appSF :: SF Input Output
 appSF = proc i -> do
   let bg = raw $ \renderer -> do
-        SDL.rendererDrawColor renderer SDL.$= 0
+        SDL.rendererDrawColor renderer SDL.$= V4 100 149 237 255
         SDL.clear renderer
   objs
     <- router
