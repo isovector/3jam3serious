@@ -1,5 +1,6 @@
 module Jam3Serious.Ball where
 
+import Jam3Serious.Geometry
 import Jam3Serious.Mail
 import Data.Map qualified as M
 import Data.Map.Monoidal qualified as MM
@@ -13,8 +14,8 @@ data BState
 
 
 data BallState = BallState
-  { bs_pos :: V2 Double
-  , bs_vel :: V2 Double
+  { bs_pos :: V3 Double
+  , bs_vel :: V3 Double
   , bs_collision :: OriginRect Double
   , bs_state :: BState
   }
@@ -22,8 +23,8 @@ data BallState = BallState
 
 instance ToObjState BallState where
   toObjState ps = ObjState
-    { os_pos = Just $ bs_pos ps
-    , os_collision = Just $ bs_collision ps
+    { os_pos = Nothing -- Just $ bs_pos ps
+    , os_collision = Nothing -- Just $ bs_collision ps
     }
 
 data PickMeUp = PickMeUp
@@ -39,18 +40,22 @@ ball = proc (oi, bs) -> do
   returnA -<
     ( mempty
         { oo_output = raw $ \r -> do
-            SDL.rendererDrawColor r SDL.$= (V4 255 128 0 255)
-            SDL.fillRect r $ Just $ fmap round $ mkRect (bs_pos bs) (bs_collision bs)
-        , oo_outbox =
-            broadcastAt
-              (
-                case bs_state bs of
-                  FreeBall -> has #_Player
-                  Passing from -> \n -> has #_Player n && n /= from
-              )
-              PickMeUp
-              (mkRect (bs_pos bs) (bs_collision bs))
-              (oi_everyone oi)
+            drawCapsule
+              (Capsule 0 0 0.24 $ bs_pos bs)
+              (V4 255 128 0 255)
+              r
+            -- SDL.rendererDrawColor r SDL.$=
+            -- SDL.fillRect r $ Just $ fmap round $ mkRect (bs_pos bs) (bs_collision bs)
+        -- , oo_outbox =
+        --     broadcastAt
+        --       (
+        --         case bs_state bs of
+        --           FreeBall -> has #_Player
+        --           Passing from -> \n -> has #_Player n && n /= from
+        --       )
+        --       PickMeUp
+        --       (mkRect (bs_pos bs) (bs_collision bs))
+        --       (oi_everyone oi)
         , oo_commands = on pickup $ const $ pure Die
         }
     , bs & #bs_pos +~ bs_vel bs ^* i_dt (oi_input oi)
@@ -73,7 +78,7 @@ broadcastAt p a rect oss = MM.fromList $ do
   pure (who, pure $ toDyn a)
 
 
-ballState :: V2 Double -> V2 Double -> BState -> BallState
+ballState :: V3 Double -> V3 Double -> BState -> BallState
 ballState pos dir bs = BallState
   { bs_pos = pos
   , bs_vel = dir

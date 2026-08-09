@@ -2,13 +2,10 @@
 
 module Jam3Serious.Geometry where
 
-import Debug.Trace
-import Foreign.C.Types        (CInt)
-import qualified SDL.Raw.Primitive
-import SDL.Internal.Types     (Renderer(..))
-import Linear.V4
 import Data.Word
+import Jam3Serious.Camera
 import Jam3Serious.Types
+import Linear.V4
 import SDL qualified
 import SDL.Primitive
 
@@ -56,20 +53,18 @@ infix 0 ==>
 
 
 v3ToV2 :: V3 Double -> V2 Double
-v3ToV2 (V3 x y z) = V2 x ((y / 2) - z)
+v3ToV2 = fst . toScreen
 
-fillCircle' :: Renderer -> Pos -> Radius -> Color -> IO CInt
-fillCircle' (Renderer p) (V2 x y) rad (V4 r g b a) =
-  SDL.Raw.Primitive.filledCircle
-    p (traceShowId $ fromIntegral x) (traceShowId $ fromIntegral y) (fromIntegral rad) r g b 255
 
 drawCapsule :: Capsule Double -> V4 Word8 -> SDL.Renderer -> IO ()
-drawCapsule (Capsule t b (round -> r) xyz) color renderer = do
-  let top = fmap round $ v3ToV2 $ xyz + V3 0 0 t
-      bot = fmap round $ v3ToV2 $ xyz - V3 0 0 b
+drawCapsule (Capsule t b r xyz) color renderer = do
+  let (fmap round -> top, st) = toScreen $ xyz + V3 0 0 t
+      (fmap round -> bot, sb) = toScreen $ xyz - V3 0 0 b
+      rt = round $ st * r
+      rb = round $ sb * r
   pixel renderer (fmap round $ v3ToV2 xyz) color
-  line renderer (top - V2 r 0) (bot - V2 r 0) color
-  line renderer (top + V2 r 0) (bot + V2 r 0) color
-  arc renderer top r 180 0 color
-  arc renderer bot r 0 180 color
+  line renderer (top - V2 rt 0) (bot - V2 rb 0) color
+  line renderer (top + V2 rt 0) (bot + V2 rb 0) color
+  arc renderer top rt 180 0 color
+  arc renderer bot rb 0 180 color
 

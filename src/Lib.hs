@@ -5,8 +5,9 @@ import Control.Exception (bracket, bracket_)
 import Data.Map qualified as M
 import Data.Text (pack)
 import FRP.Yampa
-import Jam3Serious.Player
 import Jam3Serious.Ball
+import Jam3Serious.Camera
+import Jam3Serious.Player
 import Jam3Serious.Router
 import Jam3Serious.Types
 import Jam3Serious.Yampa
@@ -17,10 +18,6 @@ windowTitle :: String
 windowTitle = "3jam3serious"
 
 
-windowWidth, windowHeight :: Int
-windowWidth  = 800
-windowHeight = 600
-
 
 main :: IO ()
 main = bracket_ SDL.initializeAll SDL.quit $ do
@@ -28,8 +25,8 @@ main = bracket_ SDL.initializeAll SDL.quit $ do
     (pack windowTitle)
     SDL.defaultWindow
       { SDL.windowInitialSize = SDL.V2
-          (fromIntegral windowWidth)
-          (fromIntegral windowHeight)
+          windowWidth
+          windowHeight
       }
   renderer <- SDL.createRenderer window (-1) SDL.defaultRenderer
   bracket (pure (window, renderer))
@@ -46,9 +43,9 @@ appSF = proc i -> do
     <- router
         ( flip ObjectMap mempty
         $ M.fromList
-            [ (Player T1 P1, object (PlayerState 100 255 True) player)
-            , (Player T1 P2, object (PlayerState 300 255 False) player)
-            , (Ball, object (ballState 80 0 FreeBall) ball)
+            [ (Player T1 P1, object (PlayerState (V2 (-1) 0) 255 True) player)
+            , (Player T1 P2, object (PlayerState (V2 1 0) 128 False) player)
+            , (Ball, object (ballState 0 0 FreeBall) ball)
             ]
         ) -< i
 

@@ -77,23 +77,18 @@ player = proc (oi, ps) -> do
     ( mempty
         { oo_output = raw $ \r -> do
             drawCapsule
-              (Capsule 20 0 10 $ 0 & _xy .~ ps_pos ps)
+              (Capsule 2 0 0.25 $ 0 & _xy .~ ps_pos ps)
               (ps_color ps)
               r
-            SDL.rendererDrawColor r SDL.$= ps_color ps
-            SDL.fillRect r $ Just $
-              SDL.Rectangle
-                (SDL.P (fmap round $ ps_pos ps))
-                (V2 50 50)
         , oo_outbox =
             on pickup $ respond PickedUp
-        , oo_commands =
-            on pass $ const $ pure $
-              Spawn Ball
-                $ object (ballState (ps_pos ps) (maybe 0 (subtract $ ps_pos ps) (os_pos teammate)) $ Passing $ oi_me oi) ball
+        -- , oo_commands =
+        --     on pass $ const $ pure $
+        --       Spawn Ball
+        --         $ object (ballState (ps_pos ps) (maybe 0 (subtract $ ps_pos ps) (os_pos teammate)) $ Passing $ oi_me oi) ball
         }
     , ps
-        & #ps_pos +~ c_dir ctrl ^* (50 * i_dt (oi_input oi))
+        & #ps_pos +~ c_dir ctrl ^* (bool 3 6 (c_run ctrl) * i_dt (oi_input oi))
         & #ps_color %~ appEndo (on pickup $ const $ Endo $ const $ V4 0 128 255 255)
     )
 
