@@ -2,11 +2,12 @@
 
 module Jam3Serious.Player where
 
-import Jam3Serious.Router (object)
+import Data.Map qualified as M
 import Data.Monoid
 import Jam3Serious.Ball
-import Jam3Serious.Prelude
 import Jam3Serious.Mail
+import Jam3Serious.Prelude
+import Jam3Serious.Router (object)
 import qualified SDL
 
 
@@ -69,6 +70,7 @@ player = proc (oi, ps) -> do
 
   pickup <- onMail @PickMeUp -< oi
   let pass = c_shoot ctrl
+      teammate = findTeammate oi
 
   returnA -<
     ( mempty
@@ -83,11 +85,16 @@ player = proc (oi, ps) -> do
         , oo_commands =
             on pass $ const $ pure $
               Spawn Ball
-                $ object (ballState (ps_pos ps) 100 $ Passing $ oi_me oi) ball
+                $ object (ballState (ps_pos ps) (maybe 0 (subtract $ ps_pos ps) (os_pos teammate)) $ Passing $ oi_me oi) ball
         }
     , ps
         & #ps_pos +~ c_dir ctrl ^* (50 * i_dt (oi_input oi))
         & #ps_color %~ appEndo (on pickup $ const $ Endo $ const $ V4 0 128 255 255)
     )
 
+
+findTeammate :: ObjInput -> ObjState
+findTeammate oi = fromMaybe (error "no teammate?") $ do
+  Player team pnum <- pure $ oi_me oi
+  M.lookup (Player team $ otherPlayerNum pnum) (oi_everyone oi)
 
