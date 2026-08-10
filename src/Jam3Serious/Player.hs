@@ -60,10 +60,10 @@ player = proc (oi, ps) -> do
     case ps_playable ps of
       True -> inputToController -< oi
       False -> do
+        c' <- inputToController -< oi
         t <- time -< ()
-        returnA -< Controller
+        returnA -< c'
           { c_dir = pure $ cos (t * 10)
-          , c_shoot = noEvent
           , c_run = False
           }
 
@@ -76,6 +76,8 @@ player = proc (oi, ps) -> do
     , False <$ pass
     ]
 
+  ballZ <- fmap (abs . cos . (* 8)) time -< ()
+
   returnA -<
     ( mempty
         { oo_output = raw $ \r -> do
@@ -86,6 +88,11 @@ player = proc (oi, ps) -> do
                  False -> V4 0 0 0 255
               )
               r
+            when hasBall $ do
+              drawCapsule
+                (ballCapsule $ (ps_pos ps + V3 0.25 0 0) & _z .~ ballZ)
+                (V4 255 128 0 255)
+                r
         , oo_outbox =
             on pickup $ respond PickedUp
         , oo_commands =
