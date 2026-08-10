@@ -5,9 +5,10 @@ packages:
 
 extra-deps:
 - sdl2-2.5.5.1
+- sdl2-gfx-0.3.0.0
+
+drop-packages:
+- sdl2-gfx
 
 nix:
-  packages:
-    - pkg-config
-    - SDL2
-    - SDL2_gfx
+  shell-file: shell.nix

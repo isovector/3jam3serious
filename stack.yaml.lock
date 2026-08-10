@@ -11,6 +11,13 @@ packages:
       size: 6641
   original:
     hackage: sdl2-2.5.5.1
+- completed:
+    hackage: sdl2-gfx-0.3.0.0@sha256:b849bffb204f461d0fac63eaadc91214e0dff48a6400f24f66a7c6b9611599f1,2172
+    pantry-tree:
+      sha256: 3d994ed8195bbd8939cc68986bd1f2b431dac852db329ccc0cb10cf13735066b
+      size: 834
+  original:
+    hackage: sdl2-gfx-0.3.0.0
 snapshots:
 - completed:
     sha256: 6406d8039dd538f18fc0d242f01c7066ee386d81ba3c8751b914ac1ae193ec5d
