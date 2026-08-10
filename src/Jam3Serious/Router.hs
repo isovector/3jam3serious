@@ -57,7 +57,3 @@ decodeOutput n oo = mconcat
       Die -> Endo $ #om_objects %~ M.delete n
   ]
 
-
-object :: ToObjState a => a -> Obj a -> Object
-object a0 obj = loopPre a0 $ obj >>> arr (\(oo, a) -> ((oo, toObjState a), a))
-

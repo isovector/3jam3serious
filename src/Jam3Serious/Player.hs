@@ -5,9 +5,8 @@ module Jam3Serious.Player where
 import Data.Map qualified as M
 import Jam3Serious.Ball
 import Jam3Serious.Mail
-import Jam3Serious.Geometry
+import Jam3Serious.Drawing
 import Jam3Serious.Prelude
-import Jam3Serious.Router (object)
 
 
 onPress :: Num a => Scancode -> a -> Input -> a

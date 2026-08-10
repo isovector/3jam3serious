@@ -17,7 +17,6 @@ windowTitle :: String
 windowTitle = "3jam3serious"
 
 
-
 main :: IO ()
 main = bracket_ SDL.initializeAll SDL.quit $ do
   window <- SDL.createWindow

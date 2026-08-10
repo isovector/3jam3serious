@@ -1,11 +1,13 @@
 module Jam3Serious.Ball where
 
-import Jam3Serious.Geometry
-import Jam3Serious.Mail
 import Data.Map qualified as M
 import Data.Map.Monoidal qualified as MM
+import Jam3Serious.Drawing
+import Jam3Serious.Geometry
+import Jam3Serious.Mail
 import Jam3Serious.Prelude
 import qualified SDL
+
 
 data BState
   = FreeBall

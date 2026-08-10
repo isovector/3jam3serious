@@ -41,3 +41,7 @@ keyboard = arr . flip i_keyboard
 keypress :: Scancode -> SF Input (Event ())
 keypress c = keyboard c >>> edge
 
+
+object :: ToObjState a => a -> Obj a -> Object
+object a0 obj = loopPre a0 $ obj >>> arr (\(oo, a) -> ((oo, toObjState a), a))
+
