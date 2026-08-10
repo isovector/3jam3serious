@@ -75,12 +75,9 @@ data Command
   deriving stock (Generic)
 
 
-data PlayerNum = P1 | P2
-  deriving stock (Eq, Ord, Show, Enum, Bounded, Generic)
-
-otherPlayerNum :: PlayerNum -> PlayerNum
-otherPlayerNum P1 = P2
-otherPlayerNum P2 = P1
+newtype PlayerNum = PlayerNum Int
+  deriving newtype (Eq, Ord, Show, Enum, Bounded)
+  deriving stock Generic
 
 data Team = T1 | T2
   deriving stock (Eq, Ord, Show, Enum, Bounded, Generic)

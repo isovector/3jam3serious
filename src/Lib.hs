@@ -41,8 +41,9 @@ appSF = proc i -> do
     <- router
         ( flip ObjectMap mempty
         $ M.fromList
-            [ (Player T1 P1, object (PlayerState (V3 (-1) 0 0) True) player)
-            , (Player T1 P2, object (PlayerState (V3 1 0 0) False) player)
+            [ (Player T1 $ PlayerNum 0, object (PlayerState (V3 (-1) 0 0) True Circle) player)
+            , (Player T1 $ PlayerNum 1, object (PlayerState (V3 1 0 0) False BackAndForth) player)
+            , (Player T1 $ PlayerNum 2, object (PlayerState (V3 (-2) 2 0) False Circle) player)
             , (Ball, object (ballState (V3 0 0 1) 0 FreeBall) ball)
             ]
         ) -< i

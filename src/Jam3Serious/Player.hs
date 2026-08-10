@@ -2,6 +2,8 @@
 
 module Jam3Serious.Player where
 
+import Linear.Metric (qd)
+import Data.List (sortOn)
 import Data.Map qualified as M
 import Jam3Serious.Ball
 import Jam3Serious.Mail
@@ -37,10 +39,14 @@ inputToController = proc (oi_input -> i) -> do
     , c_run = i_keyboard i ScancodeLShift
     }
 
+data Pattern
+  = BackAndForth
+  | Circle
 
 data PlayerState = PlayerState
   { ps_pos :: V3 Double
   , ps_playable :: Bool
+  , ps_pattern :: Pattern
   }
   deriving Generic
 
@@ -63,13 +69,16 @@ player = proc (oi, ps) -> do
         c' <- inputToController -< oi
         t <- time -< ()
         returnA -< c'
-          { c_dir = pure $ cos (t * 10)
+          { c_dir =
+              case ps_pattern ps of
+                BackAndForth -> V2 (cos (t * 5)) 0
+                Circle -> V2 (cos (-t * 10)) (sin (t * 10))
           , c_run = False
           }
 
   pickup <- onMail @PickMeUp -< oi
   let pass = c_shoot ctrl
-      teammate = findTeammate oi
+      teammate = nearestTeammate oi
 
   hasBall <- iPre False <<< hold False -< asum
     [ True <$ pickup
@@ -107,8 +116,13 @@ player = proc (oi, ps) -> do
     )
 
 
-findTeammate :: ObjInput -> ObjState
-findTeammate oi = fromMaybe (error "no teammate?") $ do
-  Player team pnum <- pure $ oi_me oi
-  M.lookup (Player team $ otherPlayerNum pnum) (oi_everyone oi)
+nearestTeammate :: ObjInput -> ObjState
+nearestTeammate oi = fromMaybe (error "no teammate?") $ do
+  me@(Player meteam _) <- pure $ oi_me oi
+  mepos <- os_pos =<< M.lookup me (oi_everyone oi)
+  fmap snd $ listToMaybe $ sortOn fst $ do
+    (name@(Player team _), os) <- M.toList $ oi_everyone oi
+    guard $ team == meteam && name /= me
+    pos <- maybeToList $  os_pos os
+    pure (qd mepos pos, os)
 
