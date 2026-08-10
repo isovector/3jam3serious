@@ -1,5 +1,6 @@
 module Jam3Serious.Ball where
 
+import Data.Monoid
 import Data.Map qualified as M
 import Data.Map.Monoidal qualified as MM
 import Jam3Serious.Drawing
@@ -38,9 +39,19 @@ data PickedUp = PickedUp
 ballCapsule :: V3 Double -> Capsule Double
 ballCapsule = Capsule 0 0 0.24
 
+
+ballGravity :: V3 Double
+ballGravity = V3 0 0 (-10)
+
+ballElasticity :: Double
+ballElasticity = 0.8
+
+
 ball :: Obj BallState
 ball = proc (oi, bs) -> do
   pickup <- onMail @PickedUp -< oi
+
+  bounce <- edge -< view _z (bs_pos bs) <= 0
 
   returnA -<
     ( mempty
@@ -61,7 +72,10 @@ ball = proc (oi, bs) -> do
               (oi_everyone oi)
         , oo_commands = on pickup $ const $ pure Die
         }
-    , bs & #bs_pos +~ bs_vel bs ^* i_dt (oi_input oi)
+    , bs
+        & #bs_pos +~ bs_vel bs ^* i_dt (oi_input oi)
+        & #bs_vel +~ ballGravity ^* i_dt (oi_input oi)
+        & #bs_vel %~ appEndo (on bounce $ const $ Endo $ (V3 id id ((ballElasticity *) . negate) <*>))
     )
 
 
