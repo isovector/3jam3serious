@@ -3,7 +3,6 @@
 module Jam3Serious.Player where
 
 import Data.Map qualified as M
-import Data.Monoid
 import Jam3Serious.Ball
 import Jam3Serious.Mail
 import Jam3Serious.Geometry
@@ -42,7 +41,6 @@ inputToController = proc (oi_input -> i) -> do
 
 data PlayerState = PlayerState
   { ps_pos :: V3 Double
-  , ps_color :: V4 Word8
   , ps_playable :: Bool
   }
   deriving Generic
@@ -74,17 +72,25 @@ player = proc (oi, ps) -> do
   let pass = c_shoot ctrl
       teammate = findTeammate oi
 
+  hasBall <- iPre False <<< hold False -< asum
+    [ True <$ pickup
+    , False <$ pass
+    ]
+
   returnA -<
     ( mempty
         { oo_output = raw $ \r -> do
             drawCapsule
               (playerCapsule $ ps_pos ps)
-              (ps_color ps)
+              (case hasBall of
+                 True -> V4 0 128 255 255
+                 False -> V4 0 0 0 255
+              )
               r
         , oo_outbox =
             on pickup $ respond PickedUp
         , oo_commands =
-            on pass $ const $ pure $
+            on (gate pass hasBall) $ const $ pure $
               Spawn Ball
                 $ object
                     (ballState (ps_pos ps + V3 0 0 1.5) (maybe 0 (subtract $ ps_pos ps) (os_pos teammate)) $ Passing $ oi_me oi)
@@ -92,7 +98,6 @@ player = proc (oi, ps) -> do
         }
     , ps
         & #ps_pos +~ (0 & _xy .~ c_dir ctrl ) ^* (bool 3 6 (c_run ctrl) * i_dt (oi_input oi))
-        & #ps_color %~ appEndo (on pickup $ const $ Endo $ const $ V4 0 128 255 255)
     )
 
 
