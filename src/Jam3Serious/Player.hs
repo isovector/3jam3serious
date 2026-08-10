@@ -57,7 +57,12 @@ instance ToObjState PlayerState where
     }
 
 playerCapsule :: V3 Double -> Capsule Double
-playerCapsule = Capsule 2 0 0.25
+playerCapsule = Capsule 2 0.1 0.25
+
+teamColor :: Name -> V4 Word8
+teamColor (Player T1 _) = V4 255 0 0 255
+teamColor (Player T2 _) = V4 0 0 255 255
+teamColor _ = V4 0 0 0 255
 
 
 player :: Obj PlayerState
@@ -92,10 +97,7 @@ player = proc (oi, ps) -> do
         { oo_output = raw $ \r -> do
             drawCapsule
               (playerCapsule $ ps_pos ps)
-              (case hasBall of
-                 True -> V4 0 128 255 255
-                 False -> V4 0 0 0 255
-              )
+              (teamColor $ oi_me oi)
               r
             when hasBall $ do
               drawCapsule
