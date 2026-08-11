@@ -28,6 +28,7 @@ dependencies:
 - lens
 - linear
 - monoidal-containers
+- mtl
 - profunctors
 - sdl2
 - sdl2-gfx

@@ -7,6 +7,9 @@ module Jam3Serious.Types
   , SF
   ) where
 
+import Control.Monad (forever)
+import Data.Void
+import Control.Monad.Cont
 import Control.Arrow
 import Data.Dynamic
 import Data.Map (Map)
@@ -129,4 +132,22 @@ data Capsule a = Capsule
   }
   deriving stock (Generic, Generic1, Functor, Foldable, Traversable)
   deriving Applicative via Generically1 Capsule
+
+
+newtype Swont i o e = Swont
+  { unSwont :: Cont (SF i o) e
+  }
+  deriving newtype (Functor, Applicative, Monad)
+
+
+swont :: SF i (o, Event e) -> Swont i o e
+swont = Swont . cont . switch
+
+
+switchSwont :: (e -> SF i o) -> Swont i o e -> SF i o
+switchSwont f = flip runCont f . unSwont
+
+
+foreverSwont :: Swont i o e -> SF i o
+foreverSwont = switchSwont absurd . forever
 

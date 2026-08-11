@@ -27,6 +27,7 @@ library
   exposed-modules:
       Jam3Serious.Ball
       Jam3Serious.Camera
+      Jam3Serious.Drawing
       Jam3Serious.Geometry
       Jam3Serious.Mail
       Jam3Serious.Player
@@ -56,6 +57,7 @@ library
     , lens
     , linear
     , monoidal-containers
+    , mtl
     , profunctors
     , sdl2
     , sdl2-gfx
@@ -86,6 +88,7 @@ executable 3jam3serious-exe
     , lens
     , linear
     , monoidal-containers
+    , mtl
     , profunctors
     , sdl2
     , sdl2-gfx
