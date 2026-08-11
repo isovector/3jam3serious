@@ -2,6 +2,7 @@
 
 module Jam3Serious.Player where
 
+import Data.Monoid
 import Linear.Metric (qd)
 import Data.List (sortOn)
 import Data.Map qualified as M
@@ -39,14 +40,10 @@ inputToController = proc (oi_input -> i) -> do
     , c_run = i_keyboard i ScancodeLShift
     }
 
-data Pattern
-  = BackAndForth
-  | Circle
-
 data PlayerState = PlayerState
   { ps_pos :: V3 Double
   , ps_playable :: Bool
-  , ps_pattern :: Pattern
+  , ps_hasBall :: Bool
   }
   deriving Generic
 
@@ -65,6 +62,11 @@ teamColor (Player T2 _) = V4 0 0 255 255
 teamColor _ = V4 0 0 0 255
 
 
+data PNode
+  = RegularGame
+  | GoTo (V2 Double)
+
+
 player :: Obj PlayerState
 player = proc (oi, ps) -> do
   ctrl <-
@@ -72,12 +74,8 @@ player = proc (oi, ps) -> do
       True -> inputToController -< oi
       False -> do
         c' <- inputToController -< oi
-        t <- time -< ()
         returnA -< c'
-          { c_dir =
-              case ps_pattern ps of
-                BackAndForth -> V2 (cos (t * 5)) 0
-                Circle -> V2 (cos (-t * 10)) (sin (t * 10))
+          { c_dir = 0
           , c_run = False
           }
 
@@ -85,29 +83,15 @@ player = proc (oi, ps) -> do
   let pass = c_shoot ctrl
       teammate = nearestTeammate oi
 
-  hasBall <- iPre False <<< hold False -< asum
-    [ True <$ pickup
-    , False <$ pass
-    ]
-
-  ballZ <- fmap (abs . cos . (* 8)) time -< ()
+  rendered <- renderPlayer -< (oi, ps)
 
   returnA -<
     ( mempty
-        { oo_output = raw $ \r -> do
-            drawCapsule
-              (playerCapsule $ ps_pos ps)
-              (teamColor $ oi_me oi)
-              r
-            when hasBall $ do
-              drawCapsule
-                (ballCapsule $ (ps_pos ps + V3 0.25 0 0) & _z .~ ballZ)
-                (V4 255 128 0 255)
-                r
+        { oo_output = rendered
         , oo_outbox =
             on pickup $ respond PickedUp
         , oo_commands =
-            on (gate pass hasBall) $ const $ pure $
+            on (gate pass $ ps_hasBall ps) $ const $ pure $
               Spawn Ball
                 $ object
                     (ballState (ps_pos ps + V3 0 0 1.5) (maybe 0 (subtract $ ps_pos ps) (os_pos teammate)) $ Passing $ oi_me oi)
@@ -115,8 +99,27 @@ player = proc (oi, ps) -> do
         }
     , ps
         & #ps_pos +~ (0 & _xy .~ c_dir ctrl ) ^* (bool 3 6 (c_run ctrl) * i_dt (oi_input oi))
+        & #ps_hasBall %~ appEndo (
+              mconcat
+                [ on pickup (const $ Endo $ const True)
+                , on pass (const $ Endo $ const False)
+                ])
     )
 
+
+renderPlayer :: SF (ObjInput, PlayerState) Output
+renderPlayer = proc (oi, ps) -> do
+  ballZ <- fmap (abs . cos . (* 8)) time -< ()
+  returnA -< raw $ \r -> do
+    drawCapsule
+      (playerCapsule $ ps_pos ps)
+      (teamColor $ oi_me oi)
+      r
+    when (ps_hasBall ps) $ do
+      drawCapsule
+        (ballCapsule $ (ps_pos ps + V3 0.25 0 0) & _z .~ ballZ)
+        (V4 255 128 0 255)
+        r
 
 nearestTeammate :: ObjInput -> ObjState
 nearestTeammate oi = fromMaybe (error "no teammate?") $ do
