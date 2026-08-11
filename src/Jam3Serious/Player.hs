@@ -66,6 +66,12 @@ data PNode
   = RegularGame
   | GoTo (V2 Double)
 
+walkSpeed :: Num a => a
+walkSpeed = 3
+
+
+runSpeed :: Num a => a
+runSpeed = 6
 
 player :: Obj PlayerState
 player = proc (oi, ps) -> do
@@ -98,7 +104,7 @@ player = proc (oi, ps) -> do
                     ball
         }
     , ps
-        & #ps_pos +~ (0 & _xy .~ c_dir ctrl ) ^* (bool 3 6 (c_run ctrl) * i_dt (oi_input oi))
+        & #ps_pos +~ (0 & _xy .~ c_dir ctrl) ^* (bool walkSpeed runSpeed (c_run ctrl) * i_dt (oi_input oi))
         & #ps_hasBall %~ appEndo (
               mconcat
                 [ on pickup (const $ Endo $ const True)
