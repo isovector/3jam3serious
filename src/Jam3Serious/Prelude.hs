@@ -10,14 +10,16 @@ import Control.Monad as X
 import Data.Bool as X (bool)
 import Data.Dynamic as X (Dynamic, toDyn, fromDynamic, Typeable)
 import Data.Generics.Labels ()
+import Data.Monoid as X
 import Data.Map as X (Map)
 import Data.Map.Monoidal as X (MonoidalMap)
 import Data.Maybe as X
 import Data.Set as X (Set)
 import Data.Word as X
-import FRP.Yampa as X hiding ((^/), (^+^), (^-^), (*^))
+import FRP.Yampa as X hiding ((^/), (^+^), (^-^), (*^), normalize, dot, norm)
 import GHC.Generics as X (Generic, Generically(..))
 import Jam3Serious.Types as X
+import Linear.Metric as X
 import Linear.V2 as X
 import Linear.V3 as X
 import Linear.V4 as X

@@ -3,7 +3,6 @@ module Jam3Serious.Router where
 import Jam3Serious.Prelude
 import Data.Map qualified as M
 import Data.Map.Monoidal qualified as MM
-import Data.Monoid
 
 
 router

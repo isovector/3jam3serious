@@ -141,7 +141,7 @@ newtype Swont i o e = Swont
 
 
 swont :: SF i (o, Event e) -> Swont i o e
-swont = Swont . cont . switch
+swont = Swont . cont . dSwitch
 
 
 switchSwont :: (e -> SF i o) -> Swont i o e -> SF i o
@@ -150,4 +150,8 @@ switchSwont f = flip runCont f . unSwont
 
 foreverSwont :: Swont i o e -> SF i o
 foreverSwont = switchSwont absurd . forever
+
+
+output :: ObjOutput -> Swont (a, x) (ObjOutput, x) ()
+output oo = swont $ arr $ \(_, x) -> ((oo, x), pure ())
 

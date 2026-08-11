@@ -2,8 +2,6 @@
 
 module Jam3Serious.Player where
 
-import Data.Monoid
-import Linear.Metric (qd)
 import Data.List (sortOn)
 import Data.Map qualified as M
 import Jam3Serious.Ball
@@ -74,7 +72,31 @@ runSpeed :: Num a => a
 runSpeed = 6
 
 player :: Obj PlayerState
-player = proc (oi, ps) -> do
+player = foreverSwont $ do
+  swont runPlayer >>= \case
+   GoTo goal -> swont $ gotoPlayer goal
+   RegularGame -> pure ()
+
+
+gotoPlayer :: V2 Double -> SF (ObjInput, PlayerState) ((ObjOutput, PlayerState), Event ())
+gotoPlayer goal = proc (oi, ps) -> do
+  let pos = ps_pos ps ^. _xy
+  let dist = distance pos goal
+  arrived <- edge -< dist <= 0.1
+  rendered <- renderPlayer -< (oi, ps)
+  returnA -<
+    ( ( mempty { oo_output = rendered }
+      , ps & #ps_pos ._xy +~ normalize (goal - pos) ^* min dist (walkSpeed * i_dt (oi_input oi))
+      )
+    , arrived
+    )
+
+
+
+runPlayer
+  :: SF (ObjInput, PlayerState)
+        ((ObjOutput, PlayerState), Event PNode)
+runPlayer = proc (oi, ps) -> do
   ctrl <-
     case ps_playable ps of
       True -> inputToController -< oi
@@ -86,18 +108,20 @@ player = proc (oi, ps) -> do
           }
 
   pickup <- onMail @PickMeUp -< oi
-  let pass = c_shoot ctrl
+  changeState <- fmap (fmap message) $ onMail @PNode -< oi
+
+  let pass = gate (c_shoot ctrl) (ps_hasBall ps)
       teammate = nearestTeammate oi
 
   rendered <- renderPlayer -< (oi, ps)
 
-  returnA -<
+  returnA -< (, asum [ changeState, GoTo (V2 (-5) (-3)) <$ pass ]) $
     ( mempty
         { oo_output = rendered
         , oo_outbox =
             on pickup $ respond PickedUp
         , oo_commands =
-            on (gate pass $ ps_hasBall ps) $ const $ pure $
+            on pass $ const $ pure $
               Spawn Ball
                 $ object
                     (ballState (ps_pos ps + V3 0 0 1.5) (maybe 0 (subtract $ ps_pos ps) (os_pos teammate)) $ Passing $ oi_me oi)
