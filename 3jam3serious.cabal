@@ -25,6 +25,7 @@ source-repository head
 
 library
   exposed-modules:
+      Data.Bezier
       Jam3Serious.Ball
       Jam3Serious.Basket
       Jam3Serious.Camera
@@ -86,6 +87,43 @@ executable 3jam3serious-exe
     , base >=4.7 && <5
     , containers
     , generic-lens
+    , lens
+    , linear
+    , monoidal-containers
+    , mtl
+    , profunctors
+    , sdl2
+    , sdl2-gfx
+    , text
+  default-language: GHC2024
+
+test-suite tests
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      BezierSpec
+      Paths_3jam3serious
+  autogen-modules:
+      Paths_3jam3serious
+  hs-source-dirs:
+      test
+  default-extensions:
+      DerivingVia
+      DeriveAnyClass
+      GeneralizedNewtypeDeriving
+      Arrows
+      OverloadedLabels
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      3jam3serious
+    , QuickCheck
+    , Yampa
+    , base >=4.7 && <5
+    , checkers
+    , containers
+    , generic-lens
+    , hspec
+    , hspec-discover
     , lens
     , linear
     , monoidal-containers
