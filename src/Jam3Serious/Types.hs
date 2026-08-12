@@ -86,7 +86,9 @@ data Team = T1 | T2
   deriving stock (Eq, Ord, Show, Enum, Bounded, Generic)
 
 data Name
-  = Player Team PlayerNum | Ball
+  = Player Team PlayerNum
+  | Ball
+  | Basket Team
   deriving stock (Eq, Ord, Show, Generic)
 
 data Mail a = Mail

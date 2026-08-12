@@ -26,6 +26,7 @@ source-repository head
 library
   exposed-modules:
       Jam3Serious.Ball
+      Jam3Serious.Basket
       Jam3Serious.Camera
       Jam3Serious.Drawing
       Jam3Serious.Geometry

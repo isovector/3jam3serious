@@ -5,6 +5,7 @@ import Data.Map qualified as M
 import Data.Text (pack)
 import FRP.Yampa
 import Jam3Serious.Ball
+import Jam3Serious.Basket
 import Jam3Serious.Camera
 import Jam3Serious.Player
 import Jam3Serious.Prelude
@@ -47,6 +48,8 @@ appSF = proc i -> do
             , (Player T2 $ PlayerNum 0, object (PlayerState (V3 0 0 0) False False) player)
             , (Player T2 $ PlayerNum 1, object (PlayerState (V3 2 2 0) False False) player)
             , (Ball, object (ballState (V3 0 0 1) 0 FreeBall) ball)
+            , (Basket T1, object (V3 (-5) 0 4) basket)
+            , (Basket T2, object (V3 5 0 4) basket)
             ]
         ) -< i
 
