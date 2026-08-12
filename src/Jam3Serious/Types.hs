@@ -21,14 +21,20 @@ import GHC.Generics (Generic, Generic1, Generically(..), Generically1(..))
 import SDL (V2(..), V3(..))
 import qualified SDL
 
-deriving via (Ap Event a) instance Semigroup a => Semigroup (Event a)
-deriving via (Ap Event a) instance Monoid a => Monoid (Event a)
 deriving via (Ap (SF a) b) instance Semigroup b => Semigroup (SF a b)
 deriving via (Ap (SF a) b) instance Monoid b => Monoid (SF a b)
 deriving via (Ap (SF a) b) instance Num b => Num (SF a b)
 deriving via (Ap ((->) a) b) instance Num b => Num (a -> b)
 deriving stock instance Foldable Event
 deriving stock instance Traversable Event
+
+
+
+instance Semigroup a => Semigroup (Event a) where
+  (<>) = mergeBy (<>)
+
+instance Semigroup a => Monoid (Event a) where
+  mempty = noEvent
 
 instance Profunctor SF where
   dimap f g sf = arr f >>> sf >>> arr g
