@@ -1,5 +1,6 @@
 module Jam3Serious.Ball where
 
+import Data.Bezier
 import Data.Monoid
 import Data.Map qualified as M
 import Data.Map.Monoidal qualified as MM
@@ -8,13 +9,19 @@ import Jam3Serious.Geometry
 import Jam3Serious.Mail
 import Jam3Serious.Prelude
 import qualified SDL
+import FRP.Yampa qualified as Y
 
 
 data BState
   = FreeBall
   | Passing Name
-  deriving stock (Generic, Eq, Ord, Show)
+  deriving stock (Generic)
 
+data FollowBezier = FollowBezier
+  { fb_dur :: Double
+  , fb_bez :: Bezier Double (V3 Double)
+  }
+  deriving (Show)
 
 data BallState = BallState
   { bs_pos :: V3 Double
@@ -46,36 +53,68 @@ ballGravity = V3 0 0 (-10)
 ballElasticity :: Double
 ballElasticity = 0.8
 
+instance VectorSpace (V3 Double) Double where
+  zeroVector = 0
+  (*^) = (*^)
+  (^+^) = (+)
+  dot = dot
+
+ballBezier :: FollowBezier -> ObjE BallState ()
+ballBezier (FollowBezier dur bez) = proc (_, bs) -> do
+  t <- time -< ()
+  done <- after dur () -< ()
+  vel <- derivative -< bs_pos bs
+  returnA -<
+    ( ( mempty { oo_output = drawBall bs }
+      , bs
+          & #bs_pos .~ runBezier bez (t / dur)
+          & #bs_vel .~ vel
+      )
+    , done
+    )
 
 ball :: Obj BallState
-ball = proc (oi, bs) -> do
+ball = foreverSwont $ do
+  e <- swont ballReg
+  swont $ ballBezier e
+
+drawBall :: BallState -> Output
+drawBall bs =
+  raw $ \r -> do
+    drawCapsule
+      (ballCapsule $ bs_pos bs)
+      (V4 255 128 0 255)
+      r
+
+ballReg :: ObjE BallState FollowBezier
+ballReg = proc (oi, bs) -> do
   pickup <- onMail @PickedUp -< oi
+  follow <- onMail @FollowBezier -< oi
 
   bounce <- edge -< view _z (bs_pos bs) <= 0
 
   returnA -<
-    ( mempty
-        { oo_output = raw $ \r -> do
-            drawCapsule
-              (ballCapsule $ bs_pos bs)
-              (V4 255 128 0 255)
-              r
-        , oo_outbox =
-            broadcastAt
-              (
-                case bs_state bs of
-                  FreeBall -> has #_Player
-                  Passing from -> \n -> has #_Player n && n /= from
-              )
-              PickMeUp
-              (ballCapsule $ bs_pos bs)
-              (oi_everyone oi)
-        , oo_commands = on pickup $ const $ pure Die
-        }
-    , bs
-        & #bs_pos +~ bs_vel bs ^* i_dt (oi_input oi)
-        & #bs_vel +~ ballGravity ^* i_dt (oi_input oi)
-        & #bs_vel %~ appEndo (on bounce $ const $ Endo $ (V3 id id ((ballElasticity *) . negate) <*>))
+    (
+      ( mempty
+          { oo_output = drawBall bs
+          , oo_outbox =
+              broadcastAt
+                (
+                  case bs_state bs of
+                    FreeBall -> has #_Player
+                    Passing from -> \n -> has #_Player n && n /= from
+                )
+                PickMeUp
+                (ballCapsule $ bs_pos bs)
+                (oi_everyone oi)
+          , oo_commands = on pickup $ const $ pure Die
+          }
+      , bs
+          & #bs_pos +~ bs_vel bs ^* i_dt (oi_input oi)
+          & #bs_vel +~ ballGravity ^* i_dt (oi_input oi)
+          & #bs_vel %~ appEndo (on bounce $ const $ Endo $ (V3 id id ((ballElasticity *) . negate) <*>))
+      )
+    , fmap message follow
     )
 
 

@@ -114,6 +114,7 @@ data ObjectMap a = ObjectMap
 
 type Object = SF ObjInput (ObjOutput, ObjState)
 type Obj a = SF (ObjInput, a) (ObjOutput, a)
+type ObjE a e = SF (ObjInput, a) ((ObjOutput, a), Event e)
 
 data ObjState = ObjState
   { os_pos :: Maybe (V3 Double)

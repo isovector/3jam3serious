@@ -2,6 +2,8 @@
 
 module Jam3Serious.Player where
 
+import Jam3Serious.Basket
+import Data.Bezier
 import Data.List (sortOn)
 import Data.Map qualified as M
 import Jam3Serious.Ball
@@ -26,15 +28,18 @@ arrows =
 data Controller = Controller
   { c_dir :: V2 Double
   , c_shoot :: Event ()
+  , c_pass :: Event ()
   , c_run :: Bool
   }
 
 inputToController :: SF ObjInput Controller
 inputToController = proc (oi_input -> i) -> do
   shoot <- edge -< i_keyboard i ScancodeSpace
+  pass <- edge -< i_keyboard i ScancodeF
   returnA -< Controller
     { c_dir = arrows i
     , c_shoot = shoot
+    , c_pass = pass
     , c_run = i_keyboard i ScancodeLShift
     }
 
@@ -78,7 +83,7 @@ player = foreverSwont $ do
    RegularGame -> pure ()
 
 
-gotoPlayer :: V2 Double -> SF (ObjInput, PlayerState) ((ObjOutput, PlayerState), Event ())
+gotoPlayer :: V2 Double -> ObjE PlayerState ()
 gotoPlayer goal = proc (oi, ps) -> do
   let pos = ps_pos ps ^. _xy
   let dist = distance pos goal
@@ -93,9 +98,7 @@ gotoPlayer goal = proc (oi, ps) -> do
 
 
 
-runPlayer
-  :: SF (ObjInput, PlayerState)
-        ((ObjOutput, PlayerState), Event PNode)
+runPlayer :: ObjE PlayerState PNode
 runPlayer = proc (oi, ps) -> do
   ctrl <-
     case ps_playable ps of
@@ -110,7 +113,8 @@ runPlayer = proc (oi, ps) -> do
   pickup <- onMail @PickMeUp -< oi
   changeState <- fmap (fmap message) $ onMail @PNode -< oi
 
-  let pass = gate (c_shoot ctrl) (ps_hasBall ps)
+  let pass = Passing (oi_me oi) <$ gate (c_pass ctrl) (ps_hasBall ps)
+      shoot = FollowBezier 1 (mkShootBezier oi T2) <$ gate (c_shoot ctrl) (ps_hasBall ps)
       teammate = nearestTeammate oi
 
   rendered <- renderPlayer -< (oi, ps)
@@ -118,13 +122,15 @@ runPlayer = proc (oi, ps) -> do
   returnA -< (, asum [ changeState, GoTo (V2 (-5) (-3)) <$ pass ]) $
     ( mempty
         { oo_output = rendered
-        , oo_outbox =
-            on pickup $ respond PickedUp
+        , oo_outbox = mconcat
+            [ on pickup $ respond PickedUp
+            , on shoot $ send Ball
+            ]
         , oo_commands =
-            on pass $ const $ pure $
+            on ((FreeBall <$ shoot) <|> pass) $ \bs -> pure $
               Spawn Ball
                 $ object
-                    (ballState (ps_pos ps + V3 0 0 1.5) (maybe 0 (subtract $ ps_pos ps) (os_pos teammate)) $ Passing $ oi_me oi)
+                    (ballState (ps_pos ps + V3 0 0 1.5) (maybe 0 (subtract $ ps_pos ps) (os_pos teammate)) bs)
                     ball
         }
     , ps
@@ -133,6 +139,7 @@ runPlayer = proc (oi, ps) -> do
               mconcat
                 [ on pickup (const $ Endo $ const True)
                 , on pass (const $ Endo $ const False)
+                , on shoot (const $ Endo $ const False)
                 ])
     )
 
@@ -151,6 +158,7 @@ renderPlayer = proc (oi, ps) -> do
         (V4 255 128 0 255)
         r
 
+
 nearestTeammate :: ObjInput -> ObjState
 nearestTeammate oi = fromMaybe (error "no teammate?") $ do
   me@(Player meteam _) <- pure $ oi_me oi
@@ -160,4 +168,13 @@ nearestTeammate oi = fromMaybe (error "no teammate?") $ do
     guard $ team == meteam && name /= me
     pos <- maybeToList $  os_pos os
     pure (qd mepos pos, os)
+
+
+mkShootBezier :: ObjInput -> Team -> Bezier Double (V3 Double)
+mkShootBezier oi t = bezier
+  [ (fromMaybe (error $ "no pos for me " <> show (oi_me oi)) $
+      os_pos =<< M.lookup (oi_me oi) (oi_everyone oi)) + V3 0 0 1
+  , netPos oi t + V3 0 0 3
+  , netPos oi t
+  ]
 
