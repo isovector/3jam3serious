@@ -49,10 +49,10 @@ router' objs0 =
 
 decodeOutput :: Name -> ObjOutput -> Endo (ObjectMap Object)
 decodeOutput n oo = mconcat
-  [ flip foldMap (MM.toList $ oo_outbox oo) $ \(to, dyns) -> Endo $
-      #om_messages <>~ MM.singleton to (fmap (Mail n) dyns)
-  , flip foldMap (oo_commands oo) $ \case
+  [ flip foldMap (oo_commands oo) $ \case
       Spawn n' obj -> Endo $ #om_objects <>~ M.singleton n' obj
       Die -> Endo $ #om_objects %~ M.delete n
+  , flip foldMap (MM.toList $ oo_outbox oo) $ \(to, dyns) -> Endo $
+      #om_messages <>~ MM.singleton to (fmap (Mail n) dyns)
   ]
 
