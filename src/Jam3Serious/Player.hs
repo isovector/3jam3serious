@@ -170,10 +170,14 @@ nearestTeammate oi = fromMaybe (error "no teammate?") $ do
     pure (qd mepos pos, os)
 
 
+shootHeight :: Double
+shootHeight = 1.7
+
+
 mkShootBezier :: ObjInput -> Team -> Bezier Double (V3 Double)
 mkShootBezier oi t = bezier
   [ (fromMaybe (error $ "no pos for me " <> show (oi_me oi)) $
-      os_pos =<< M.lookup (oi_me oi) (oi_everyone oi)) + V3 0 0 1
+      os_pos =<< M.lookup (oi_me oi) (oi_everyone oi)) + V3 0 0 shootHeight
   , netPos oi t + V3 0 0 3
   , netPos oi t
   ]
