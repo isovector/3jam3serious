@@ -26,13 +26,13 @@ source-repository head
 library
   exposed-modules:
       Data.Bezier
-      Jam3Serious.Ball
-      Jam3Serious.Basket
       Jam3Serious.Camera
       Jam3Serious.Drawing
       Jam3Serious.Geometry
       Jam3Serious.Mail
-      Jam3Serious.Player
+      Jam3Serious.Objects.Ball
+      Jam3Serious.Objects.Basket
+      Jam3Serious.Objects.Player
       Jam3Serious.Prelude
       Jam3Serious.Router
       Jam3Serious.Types

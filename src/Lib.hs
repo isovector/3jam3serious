@@ -4,10 +4,10 @@ import Control.Exception (bracket, bracket_)
 import Data.Map qualified as M
 import Data.Text (pack)
 import FRP.Yampa
-import Jam3Serious.Ball
-import Jam3Serious.Basket
 import Jam3Serious.Camera
-import Jam3Serious.Player
+import Jam3Serious.Objects.Ball
+import Jam3Serious.Objects.Basket
+import Jam3Serious.Objects.Player
 import Jam3Serious.Prelude
 import Jam3Serious.Router
 import Jam3Serious.Yampa

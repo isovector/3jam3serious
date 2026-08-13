@@ -1,15 +1,15 @@
-module Jam3Serious.Ball where
+module Jam3Serious.Objects.Ball where
 
 import Data.Bezier
-import Data.Monoid
 import Data.Map qualified as M
 import Data.Map.Monoidal qualified as MM
+import Data.Monoid
+import FRP.Yampa qualified as Y
 import Jam3Serious.Drawing
 import Jam3Serious.Geometry
 import Jam3Serious.Mail
 import Jam3Serious.Prelude
 import qualified SDL
-import FRP.Yampa qualified as Y
 
 
 data BState
@@ -80,11 +80,9 @@ ball = foreverSwont $ do
 
 drawBall :: BallState -> Output
 drawBall bs =
-  raw $ \r -> do
-    drawCapsule
-      (ballCapsule $ bs_pos bs)
-      (V4 255 128 0 255)
-      r
+  drawCapsule
+    (ballCapsule $ bs_pos bs)
+    (V4 255 128 0 255)
 
 ballReg :: ObjE BallState FollowBezier
 ballReg = proc (oi, bs) -> do

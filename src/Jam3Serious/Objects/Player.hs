@@ -1,14 +1,14 @@
 {-# LANGUAGE ViewPatterns #-}
 
-module Jam3Serious.Player where
+module Jam3Serious.Objects.Player where
 
-import Jam3Serious.Basket
 import Data.Bezier
 import Data.List (sortOn)
 import Data.Map qualified as M
-import Jam3Serious.Ball
-import Jam3Serious.Mail
 import Jam3Serious.Drawing
+import Jam3Serious.Mail
+import Jam3Serious.Objects.Ball
+import Jam3Serious.Objects.Basket
 import Jam3Serious.Prelude
 
 
@@ -147,16 +147,15 @@ runPlayer = proc (oi, ps) -> do
 renderPlayer :: SF (ObjInput, PlayerState) Output
 renderPlayer = proc (oi, ps) -> do
   ballZ <- fmap (abs . cos . (* 8)) time -< ()
-  returnA -< raw $ \r -> do
-    drawCapsule
-      (playerCapsule $ ps_pos ps)
-      (teamColor $ oi_me oi)
-      r
-    when (ps_hasBall ps) $ do
-      drawCapsule
-        (ballCapsule $ (ps_pos ps + V3 0.25 0 0) & _z .~ ballZ)
-        (V4 255 128 0 255)
-        r
+  returnA -< mconcat
+    [ drawCapsule
+        (playerCapsule $ ps_pos ps)
+        (teamColor $ oi_me oi)
+    , flip (bool mempty) (ps_hasBall ps) $
+        drawCapsule
+          (ballCapsule $ (ps_pos ps + V3 0.25 0 0) & _z .~ ballZ)
+          (V4 255 128 0 255)
+    ]
 
 
 nearestTeammate :: ObjInput -> ObjState
