@@ -65,19 +65,11 @@ getBallPos = arr $ \(_, bs) -> ((mempty, bs), pure $ bs_pos bs)
 
 ball :: Obj BallState
 ball = foreverSwont $ do
-  _ <- timeout 0.5 $ swont physicsBall
-  swont getBallPos >>= flip passTo (V3 3 0 0.1)
-  _ <- timeout 1 $ swont physicsBall
-  swont getBallPos >>= flip shootAt (V3 (-5) 0 4)
-  _ <- timeout 1 $ swont physicsBall
-  pure ()
-
-
-  -- e <- swont physicsBall
-  -- pos <- swont getBallPos
-  -- case e of
-  --   PassTo goal -> passTo pos goal
-  --   ShootAt goal -> shootAt pos goal
+  e <- swont physicsBall
+  pos <- swont getBallPos
+  case e of
+    PassTo goal -> passTo pos goal
+    ShootAt goal -> shootAt pos goal
 
 
 passTo :: V3 Double -> V3 Double -> ObjSwont BallState ()
