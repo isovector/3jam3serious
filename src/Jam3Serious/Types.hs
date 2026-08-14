@@ -7,6 +7,7 @@ module Jam3Serious.Types
   , SF
   ) where
 
+import FRP.Yampa qualified as Y
 import Control.Monad (forever)
 import Data.Void
 import Control.Monad.Cont
@@ -16,9 +17,11 @@ import Data.Map (Map)
 import Data.Map.Monoidal (MonoidalMap)
 import Data.Monoid
 import Data.Profunctor
-import FRP.Yampa
+import FRP.Yampa (Event(..), SF, DTime, VectorSpace, mergeBy, noEvent, dSwitch)
+import Linear.Vector
 import GHC.Generics (Generic, Generic1, Generically(..), Generically1(..))
-import SDL (V2(..), V3(..))
+import SDL (V2(..), V3(..), V4(..))
+import Linear.Metric (dot)
 import qualified SDL
 
 deriving via (Ap (SF a) b) instance Semigroup b => Semigroup (SF a b)
@@ -28,6 +31,23 @@ deriving via (Ap ((->) a) b) instance Num b => Num (a -> b)
 deriving stock instance Foldable Event
 deriving stock instance Traversable Event
 
+instance (Eq a, Floating a) => VectorSpace (V2 a) a where
+  zeroVector = 0
+  (*^) = (*^)
+  (^+^) = (+)
+  dot = dot
+
+instance (Eq a, Floating a) => VectorSpace (V3 a) a where
+  zeroVector = 0
+  (*^) = (*^)
+  (^+^) = (+)
+  dot = dot
+
+instance (Eq a, Floating a) => VectorSpace (V4 a) a where
+  zeroVector = 0
+  (*^) = (*^)
+  (^+^) = (+)
+  dot = dot
 
 
 instance Semigroup a => Semigroup (Event a) where
@@ -115,6 +135,7 @@ data ObjectMap a = ObjectMap
 type Object = SF ObjInput (ObjOutput, ObjState)
 type Obj a = SF (ObjInput, a) (ObjOutput, a)
 type ObjE a e = SF (ObjInput, a) ((ObjOutput, a), Event e)
+type ObjSwont a = Swont (ObjInput, a) (ObjOutput, a)
 
 data ObjState = ObjState
   { os_pos :: Maybe (V3 Double)

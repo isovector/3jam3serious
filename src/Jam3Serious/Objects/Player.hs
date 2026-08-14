@@ -113,34 +113,34 @@ runPlayer = proc (oi, ps) -> do
   pickup <- onMail @PickMeUp -< oi
   changeState <- fmap (fmap message) $ onMail @PNode -< oi
 
-  let pass = Passing (oi_me oi) <$ gate (c_pass ctrl) (ps_hasBall ps)
-      shoot = FollowBezier 1 (mkShootBezier oi T2) <$ gate (c_shoot ctrl) (ps_hasBall ps)
+  let -- pass = Passing (oi_me oi) <$ gate (c_pass ctrl) (ps_hasBall ps)
+      -- shoot = FollowBezier 1 (mkShootBezier oi T2) <$ gate (c_shoot ctrl) (ps_hasBall ps)
       teammate = nearestTeammate oi
 
   rendered <- renderPlayer -< (oi, ps)
 
-  returnA -< (, asum [ changeState, GoTo (V2 (-5) (-3)) <$ pass ]) $
+  returnA -< (, asum [ ]) $
     ( mempty
         { oo_output = rendered
-        , oo_outbox = mconcat
-            [ on pickup $ respond PickedUp
-            , on shoot $ send Ball
-            ]
-        , oo_commands =
-            on ((FreeBall <$ shoot) <|> pass) $ \bs -> pure $
-              Spawn Ball
-                $ object
-                    (ballState (ps_pos ps + V3 0 0 1.5) (maybe 0 (subtract $ ps_pos ps) (os_pos teammate)) bs)
-                    ball
+        , oo_outbox = undefined -- mconcat
+            -- [ on pickup $ respond PickedUp
+            -- , on shoot $ send Ball
+            -- ]
+        -- , oo_commands =
+        --     on ((FreeBall <$ shoot) <|> pass) $ \bs -> pure $
+        --       Spawn Ball
+        --         $ object
+        --             (ballState (ps_pos ps + V3 0 0 1.5) (maybe 0 (subtract $ ps_pos ps) (os_pos teammate)) bs)
+        --             ball
         }
     , ps
         & #ps_pos +~ (0 & _xy .~ c_dir ctrl) ^* (bool walkSpeed runSpeed (c_run ctrl) * i_dt (oi_input oi))
-        & #ps_hasBall %~ appEndo (
-              mconcat
-                [ on pickup (const $ Endo $ const True)
-                , on pass (const $ Endo $ const False)
-                , on shoot (const $ Endo $ const False)
-                ])
+        & #ps_hasBall %~ appEndo (mempty)
+              -- mconcat
+              --   [ on pickup (const $ Endo $ const True)
+              --   , on pass (const $ Endo $ const False)
+              --   , on shoot (const $ Endo $ const False)
+              --   ])
     )
 
 
@@ -167,10 +167,6 @@ nearestTeammate oi = fromMaybe (error "no teammate?") $ do
     guard $ team == meteam && name /= me
     pos <- maybeToList $  os_pos os
     pure (qd mepos pos, os)
-
-
-shootHeight :: Double
-shootHeight = 1.7
 
 
 mkShootBezier :: ObjInput -> Team -> Bezier Double (V3 Double)

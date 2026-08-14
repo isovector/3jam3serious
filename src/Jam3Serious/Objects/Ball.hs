@@ -1,21 +1,15 @@
 module Jam3Serious.Objects.Ball where
 
+import GHC.Generics
 import Data.Bezier
 import Data.Map qualified as M
 import Data.Map.Monoidal qualified as MM
 import Data.Monoid
-import FRP.Yampa qualified as Y
 import Jam3Serious.Drawing
 import Jam3Serious.Geometry
 import Jam3Serious.Mail
 import Jam3Serious.Prelude
 import qualified SDL
-
-
-data BState
-  = FreeBall
-  | Passing Name
-  deriving stock (Generic)
 
 data FollowBezier = FollowBezier
   { fb_dur :: Double
@@ -26,7 +20,6 @@ data FollowBezier = FollowBezier
 data BallState = BallState
   { bs_pos :: V3 Double
   , bs_vel :: V3 Double
-  , bs_state :: BState
   }
   deriving Generic
 
@@ -53,14 +46,8 @@ ballGravity = V3 0 0 (-10)
 ballElasticity :: Double
 ballElasticity = 0.8
 
-instance VectorSpace (V3 Double) Double where
-  zeroVector = 0
-  (*^) = (*^)
-  (^+^) = (+)
-  dot = dot
-
-ballBezier :: FollowBezier -> ObjE BallState ()
-ballBezier (FollowBezier dur bez) = proc (_, bs) -> do
+motionBall :: Time -> Bezier Double (V3 Double) -> ObjE BallState ()
+motionBall dur bez = proc (_, bs) -> do
   t <- time -< ()
   done <- after dur () -< ()
   vel <- derivative -< bs_pos bs
@@ -73,10 +60,47 @@ ballBezier (FollowBezier dur bez) = proc (_, bs) -> do
     , done
     )
 
+getBallPos :: ObjE BallState (V3 Double)
+getBallPos = arr $ \(_, bs) -> ((mempty, bs), pure $ bs_pos bs)
+
 ball :: Obj BallState
 ball = foreverSwont $ do
-  e <- swont ballReg
-  swont $ ballBezier e
+  _ <- timeout 0.5 $ swont physicsBall
+  swont getBallPos >>= flip passTo (V3 3 0 0.1)
+  _ <- timeout 1 $ swont physicsBall
+  swont getBallPos >>= flip shootAt (V3 (-5) 0 4)
+  _ <- timeout 1 $ swont physicsBall
+  pure ()
+
+
+  -- e <- swont physicsBall
+  -- pos <- swont getBallPos
+  -- case e of
+  --   PassTo goal -> passTo pos goal
+  --   ShootAt goal -> shootAt pos goal
+
+
+passTo :: V3 Double -> V3 Double -> ObjSwont BallState ()
+passTo pos goal =
+  swont $ motionBall 1 $ bezier [pos & _z .~ passHeight, goal]
+
+shootAt :: V3 Double -> V3 Double -> ObjSwont BallState ()
+shootAt pos goal = do
+  let start = pos + V3 0 0 shootHeight
+  swont $ motionBall 1 $ bezier
+    [ start
+    , start + (goal - start) / 3 + midControlOffset
+    , start + (goal - start) * (2 / 3) + shootControlOffset
+    , goal
+    ]
+
+shootHeight, passHeight :: Double
+shootHeight = 2.4
+passHeight = 1.7
+
+midControlOffset, shootControlOffset :: V3 Double
+midControlOffset = V3 0 0 4
+shootControlOffset = V3 0 0 3
 
 drawBall :: BallState -> Output
 drawBall bs =
@@ -84,10 +108,16 @@ drawBall bs =
     (ballCapsule $ bs_pos bs)
     (V4 255 128 0 255)
 
-ballReg :: ObjE BallState FollowBezier
-ballReg = proc (oi, bs) -> do
+
+data BallAction
+  = ShootAt (V3 Double)
+  | PassTo (V3 Double)
+  deriving stock (Eq, Ord, Show)
+
+physicsBall :: ObjE BallState BallAction
+physicsBall = proc (oi, bs) -> do
   pickup <- onMail @PickedUp -< oi
-  follow <- onMail @FollowBezier -< oi
+  follow <- onMail @BallAction -< oi
 
   bounce <- edge -< view _z (bs_pos bs) <= 0
 
@@ -95,16 +125,16 @@ ballReg = proc (oi, bs) -> do
     (
       ( mempty
           { oo_output = drawBall bs
-          , oo_outbox =
-              broadcastAt
-                (
-                  case bs_state bs of
-                    FreeBall -> has #_Player
-                    Passing from -> \n -> has #_Player n && n /= from
-                )
-                PickMeUp
-                (ballCapsule $ bs_pos bs)
-                (oi_everyone oi)
+          , oo_outbox = mempty
+              -- broadcastAt
+              --   (
+              --     case bs_state bs of
+              --       FreeBall -> has #_Player
+              --       Passing from -> \n -> has #_Player n && n /= from
+              --   )
+              --   PickMeUp
+              --   (ballCapsule $ bs_pos bs)
+              --   (oi_everyone oi)
           , oo_commands = on pickup $ const $ pure Die
           }
       , bs
@@ -132,11 +162,10 @@ broadcastAt p a cap oss = MM.fromList $ do
   pure (who, pure $ toDyn a)
 
 
-ballState :: V3 Double -> V3 Double -> BState -> BallState
-ballState pos dir bs = BallState
+ballState :: V3 Double -> V3 Double -> BallState
+ballState pos dir = BallState
   { bs_pos = pos
   , bs_vel = dir
-  , bs_state = bs
   }
 
 

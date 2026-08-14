@@ -7,13 +7,14 @@ import Control.Applicative as X
 import Control.Arrow as X
 import Control.Lens as X ((+~), (<>~), (.~), (%~), (#), (&), view, set, over, (^.), (^..), Lens', Prism', Traversal', has)
 import Control.Monad as X
+import Control.Monad.Cont
 import Data.Bool as X (bool)
 import Data.Dynamic as X (Dynamic, toDyn, fromDynamic, Typeable)
 import Data.Generics.Labels ()
-import Data.Monoid as X
 import Data.Map as X (Map)
 import Data.Map.Monoidal as X (MonoidalMap)
 import Data.Maybe as X
+import Data.Monoid as X
 import Data.Set as X (Set)
 import Data.Word as X
 import FRP.Yampa as X hiding ((^/), (^+^), (^-^), (*^), normalize, dot, norm)
@@ -51,4 +52,14 @@ object a0 obj = loopPre a0 $ obj >>> arr (\(oo, a) -> ((oo, toObjState a), a))
 onChange :: Eq a => SF a (Event a)
 onChange = proc a ->
   edgeBy (\old new -> bool Nothing new $ old /= new) Nothing -< Just a
+
+
+timeout :: Time -> ObjSwont a b -> ObjSwont a (Maybe b)
+timeout t m = Swont $ cont $ \k ->
+  dSwitch
+    ( proc i -> do
+        done <- after t Nothing -< ()
+        o <- switchSwont (k . Just) m -< i
+        returnA -< (o, done)
+    ) k
 

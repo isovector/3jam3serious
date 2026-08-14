@@ -27,8 +27,8 @@ basket = proc (_, pos) -> do
     ( mempty
         { oo_output =
             mconcat
-              [ billboard (pos + V3 0.5 0 0) (V3 0 (1.83 / 2) 0) (V3 0 0 (1.07 / 2)) $ V4 128 128 0 255
-              , billboard (pos + V3 0.5 0 (-0.2)) (V3 0 (0.61 / 2) 0) (V3 0 0 (0.457 / 2)) $ V4 255 255 0 255
+              [ billboard (pos + V3 (-0.5) 0 0) (V3 0 (1.83 / 2) 0) (V3 0 0 (1.07 / 2)) $ V4 128 128 0 255
+              , billboard (pos + V3 (-0.5) 0 (-0.2)) (V3 0 (0.61 / 2) 0) (V3 0 0 (0.457 / 2)) $ V4 255 255 0 255
               , raw $ \r -> do
                   ellipse r
                     (fmap round $ fst $ toScreen pos) 40 10 $ V4 255 0 0 255
