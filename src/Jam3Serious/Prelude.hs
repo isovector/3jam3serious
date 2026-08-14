@@ -3,6 +3,7 @@ module Jam3Serious.Prelude
   , module Jam3Serious.Prelude
   ) where
 
+import Debug.Trace as X (traceShowId)
 import Control.Applicative as X
 import Control.Arrow as X
 import Control.Lens as X ((+~), (<>~), (.~), (%~), (#), (&), view, set, over, (^.), (^..), Lens', Prism', Traversal', has)
@@ -62,4 +63,9 @@ timeout t m = Swont $ cont $ \k ->
         o <- switchSwont (k . Just) m -< i
         returnA -< (o, done)
     ) k
+
+
+traceEvent :: Show a => Event a -> Event a
+traceEvent (Event a) = traceShowId $ Event a
+traceEvent NoEvent = NoEvent
 

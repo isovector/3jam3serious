@@ -106,17 +106,23 @@ data BallAction
   | PassTo (V3 Double)
   deriving stock (Eq, Ord, Show)
 
+courtFloor :: Rect3 Double
+courtFloor = Rect3 0 (V3 (28.65 / 2) 0 0) (V3 0 (15.24 / 2) 0)
+
 physicsBall :: ObjE BallState BallAction
 physicsBall = proc (oi, bs) -> do
   pickup <- onMail @PickedUp -< oi
   follow <- onMail @BallAction -< oi
+  bounce <- rect3Bounce courtFloor -< bs_pos bs
 
-  bounce <- edge -< view _z (bs_pos bs) <= 0
 
   returnA -<
     (
       ( mempty
-          { oo_output = drawBall bs
+          { oo_output = mconcat
+              [ billboard courtFloor $ V4 92 92 92 255
+              , drawBall bs
+              ]
           , oo_outbox = mempty
               -- broadcastAt
               --   (
@@ -130,13 +136,12 @@ physicsBall = proc (oi, bs) -> do
           , oo_commands = on pickup $ const $ pure Die
           }
       , bs
-          & #bs_pos +~ bs_vel bs ^* i_dt (oi_input oi)
           & #bs_vel +~ ballGravity ^* i_dt (oi_input oi)
-          & #bs_vel %~ appEndo (on bounce $ const $ Endo $ (V3 id id ((ballElasticity *) . negate) <*>))
+          & #bs_vel %~ appEndo (on bounce $ \f -> Endo $ f . (^* ballElasticity))
+          & #bs_pos +~ bs_vel bs ^* i_dt (oi_input oi)
       )
     , fmap message follow
     )
-
 
 broadcastAt
     :: Typeable a

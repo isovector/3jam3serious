@@ -4,6 +4,7 @@ module Jam3Serious.Types
   ( module Jam3Serious.Types
   , V2(..)
   , V3(..)
+  , V4(..)
   , SF
   ) where
 
@@ -184,4 +185,11 @@ foreverSwont = switchSwont absurd . forever
 
 output :: ObjOutput -> Swont (a, x) (ObjOutput, x) ()
 output oo = swont $ arr $ \(_, x) -> ((oo, x), pure ())
+
+data Rect3 a = Rect3
+  { r3_center :: V3 a
+  , r3_u :: V3 a
+  , r3_v :: V3 a
+  }
+  deriving stock (Eq, Ord, Show, Functor, Foldable, Traversable)
 

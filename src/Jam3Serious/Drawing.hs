@@ -8,6 +8,7 @@ import GHC.Exts (fromList)
 import Data.Word
 import Jam3Serious.Camera
 import Jam3Serious.Types
+import Jam3Serious.Geometry
 import Linear.V4
 import SDL.Primitive
 
@@ -32,16 +33,16 @@ drawCapsule (Capsule t b r xyz) color = raw $ \renderer -> do
   horizontalLine renderer bot rb color
 
 
-billboard :: V3 Double -> V3 Double -> V3 Double -> V4 Word8 -> Output
-billboard c e1 e2 color = raw $ \renderer -> do
-  let tl = fst $ toScreen $ c - e1 - e2
-      tr = fst $ toScreen $ c - e1 + e2
-      br = fst $ toScreen $ c + e1 + e2
-      bl = fst $ toScreen $ c + e1 - e2
+billboard :: Rect3 Double -> V4 Word8 -> Output
+billboard r color = raw $ \renderer -> do
+  let V4 tl tr br bl = fmap (fst . toScreen) $ rectCorners r
       poly = fmap (fmap $ round @_ @Int16) [tl, tr, br, bl]
+      c = fmap round $ fst $ toScreen $ r3_center r
+      c' = fmap round $ fst $ toScreen $ r3_center r + rectNormal r
   fillPolygon
     renderer
     (fromList $ fmap (view _x) poly)
     (fromList $ fmap (view _y) poly)
     color
+  line renderer c c' (V4 255 0 0 92)
 

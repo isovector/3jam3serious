@@ -1,6 +1,8 @@
 module Jam3Serious.Geometry where
 
 import Jam3Serious.Types
+import Linear
+import FRP.Yampa (edge, Event, gate, returnA)
 
 
 pointInCapsule :: (Num a, Ord a) => V3 a -> Capsule a -> Bool
@@ -43,4 +45,60 @@ capsuleInCapsule
 (==>) :: Bool -> Bool -> Bool
 x ==> y = not x || y
 infix 0 ==>
+
+
+rectCorners :: Num a => Rect3 a -> V4 (V3 a)
+rectCorners (Rect3 c u v) =
+  V4
+    (c - u - v)
+    (c - u + v)
+    (c + u + v)
+    (c + u - v)
+
+
+rectNormal :: (Floating a, Epsilon a) => Rect3 a -> V3 a
+rectNormal (Rect3 _ u v) = normalize $ cross u v
+
+
+-- | The result of 'rect3V3Check'.
+data Prism3 a = Prism3
+  { p3_inside :: Bool
+  , p3_distance :: a
+  }
+  deriving stock (Eq, Ord, Show, Functor, Foldable, Traversable)
+
+
+-- | Determine where a 'V3' lies in relation to a 'Rect3'.
+rect3V3Check :: (Floating a, Epsilon a, Ord a) => Rect3 a -> V3 a -> Prism3 a
+rect3V3Check r@(Rect3 c u v) p = do
+  let -- Normalize @p@ in terms of @c@
+      d = p - c
+      -- Normalize @d@ in terms of its @u@ and @v@ dimensions.
+      a = dot d u / dot u u
+      b = dot d v / dot v v
+      -- Get the distance of @d@ along the normal
+      s = dot d $ rectNormal r
+  Prism3
+    { p3_inside =
+        -- Our rectangle has been normalized such that both a and b range
+        -- between @[-1, a]@.
+        abs a <= 1 && abs b <= 1
+    , p3_distance = s
+    }
+
+
+-- | Reflect a 'V3' off of a 'Rect3'.
+rect3Reflect :: (Floating a, Epsilon a) => Rect3 a -> V3 a -> V3 a
+rect3Reflect r d =  do
+  let n = rectNormal r
+  d - 2 * dot d n *^ n
+
+
+-- | Determine if a changing position ought to bounce off a static 'Rect3'.
+-- Returns an event that will reflect the velocity.
+rect3Bounce :: (Floating a, Epsilon a, Ord a) => Rect3 a -> SF (V3 a) (Event (V3 a -> V3 a))
+rect3Bounce rect = proc pos -> do
+  let p3 = rect3V3Check rect pos
+  couldBounce <- edge -< p3_distance p3 <= 0
+  returnA -< rect3Reflect rect <$ gate couldBounce (p3_inside p3)
 
