@@ -12,14 +12,14 @@ import Jam3Serious.Prelude
 import qualified SDL
 
 data FollowBezier = FollowBezier
-  { fb_dur :: Double
-  , fb_bez :: Bezier Double (V3 Double)
+  { fb_dur :: !Double
+  , fb_bez :: !(Bezier Double (V3 Double))
   }
   deriving (Show)
 
 data BallState = BallState
-  { bs_pos :: V3 Double
-  , bs_vel :: V3 Double
+  { bs_pos :: !(V3 Double)
+  , bs_vel :: !(V3 Double)
   }
   deriving Generic
 

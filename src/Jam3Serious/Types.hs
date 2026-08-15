@@ -14,8 +14,8 @@ import Data.Void
 import Control.Monad.Cont
 import Control.Arrow
 import Data.Dynamic
-import Data.Map (Map)
-import Data.Map.Monoidal (MonoidalMap)
+import Data.Map.Strict (Map)
+import Data.Map.Monoidal.Strict (MonoidalMap)
 import Data.Monoid
 import Data.Profunctor
 import FRP.Yampa (Event(..), SF, DTime, VectorSpace, mergeBy, noEvent, dSwitch)
@@ -65,7 +65,7 @@ data Input = Input
   { i_keyboard :: SDL.Scancode -> Bool
   , i_mouse :: SDL.MouseButton -> Bool
   , i_mousepos :: SDL.Point SDL.V2 Int
-  , i_dt :: DTime
+  , i_dt :: !DTime
   }
   deriving stock Generic
 
@@ -84,23 +84,23 @@ raw = Output
 
 
 data ObjInput = ObjInput
-  { oi_input :: Input
-  , oi_inbox :: [Mail Dynamic]
-  , oi_me :: Name
+  { oi_input :: !Input
+  , oi_inbox :: ![Mail Dynamic]
+  , oi_me :: !Name
   , oi_everyone :: Map Name ObjState
   }
   deriving stock (Generic)
 
 data ObjOutput = ObjOtuput
   { oo_outbox :: MonoidalMap Name [Dynamic]
-  , oo_commands :: [Command]
-  , oo_output :: Output
+  , oo_commands :: ![Command]
+  , oo_output :: !Output
   }
   deriving stock (Generic)
   deriving (Semigroup, Monoid) via Generically (ObjOutput)
 
 data Command
-  = Spawn Name Object
+  = Spawn !Name !Object
   | Die
   deriving stock (Generic)
 
@@ -113,15 +113,15 @@ data Team = T1 | T2
   deriving stock (Eq, Ord, Show, Enum, Bounded, Generic)
 
 data Name
-  = Player Team PlayerNum
+  = Player !Team !PlayerNum
   | Ball
-  | Basket Team
+  | Basket !Team
   | Camera
   deriving stock (Eq, Ord, Show, Generic)
 
 data Mail a = Mail
-  { from :: Name
-  , message :: a
+  { from :: !Name
+  , message :: !a
   }
   deriving stock (Generic, Functor, Foldable, Traversable)
 
@@ -140,27 +140,27 @@ type ObjE a e = SF (ObjInput, a) ((ObjOutput, a), Event e)
 type ObjSwont a = Swont (ObjInput, a) (ObjOutput, a)
 
 data ObjState = ObjState
-  { os_pos :: Maybe (V3 Double)
-  , os_collision :: Maybe (Capsule Double)
+  { os_pos :: !(Maybe (V3 Double))
+  , os_collision :: !(Maybe (Capsule Double))
   }
 
 class ToObjState a where
   toObjState :: a -> ObjState
 
 data OriginRect aff = OriginRect
-  { orect_size   :: V2 aff
-  , orect_offset :: V2 aff
+  { orect_size   :: !(V2 aff)
+  , orect_offset :: !(V2 aff)
   }
   deriving (Eq, Ord, Show, Functor, Generic)
 
 data Capsule a = Capsule
-  { c_top :: a
+  { c_top :: !a
     -- ^ Height above 'c_pos'
-  , c_bottom :: a
+  , c_bottom :: !a
     -- ^ Height below 'c_pos'
-  , c_radius :: a
+  , c_radius :: !a
     -- ^ Radius of the capsule
-  , c_pos :: V3 a
+  , c_pos :: !(V3 a)
   }
   deriving stock (Generic, Generic1, Functor, Foldable, Traversable)
   deriving Applicative via Generically1 Capsule
@@ -188,9 +188,9 @@ output :: ObjOutput -> Swont (a, x) (ObjOutput, x) ()
 output oo = swont $ arr $ \(_, x) -> ((oo, x), pure ())
 
 data Rect3 a = Rect3
-  { r3_center :: V3 a
-  , r3_u :: V3 a
-  , r3_v :: V3 a
+  { r3_center :: !(V3 a)
+  , r3_u :: !(V3 a)
+  , r3_v :: !(V3 a)
   }
   deriving stock (Eq, Ord, Show, Functor, Foldable, Traversable)
 
