@@ -21,16 +21,25 @@ basketWidth = 40
 basketHeight = 20
 
 
-basket :: Obj (V3 Double)
-basket = proc (_, pos) -> do
-  let bb  = Rect3 (pos + V3 (-0.5) 0 0) (V3 0 (1.83 / 2) 0) (V3 0 0 (1.07 / 2))
-      bb' = Rect3 (pos + V3 (-0.5) 0 0) (V3 0 (1.61 / 2) 0) (V3 0 0 (0.457 / 2))
+basketRect :: V3 Double -> V3 Double -> Rect3 Double
+basketRect normal pos = do
+  let n = normalize normal
+      up = V3 0 0 1
+      uDir = normalize $ cross up n
+      vDir = normalize $ cross n uDir
+      u = uDir ^* 1.83 / 2
+      v = vDir ^* 1.07 / 2
+  Rect3 pos u v
+
+
+basket :: V3 Double -> Obj (V3 Double)
+basket normal = proc (_, pos) -> do
+  let bb = basketRect normal $ pos - normal * 0.5
   returnA -<
     ( mempty
         { oo_output =
             mconcat
               [ billboard bb  $ V4 128 128 0 255
-              , billboard bb' $ V4 255 255 0 255
               , raw $ \r -> do
                   ellipse r
                     (fmap round $ fst $ toScreen pos) 40 10 $ V4 255 0 0 255
