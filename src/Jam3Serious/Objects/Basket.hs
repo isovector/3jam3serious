@@ -5,7 +5,7 @@ module Jam3Serious.Objects.Basket where
 import Data.Map qualified as M
 import Jam3Serious.Prelude
 import Jam3Serious.Drawing
-import Jam3Serious.Camera
+import Jam3Serious.Objects.Camera
 import SDL.Primitive
 
 
@@ -33,16 +33,16 @@ basketRect normal pos = do
 
 
 basket :: V3 Double -> Obj (V3 Double)
-basket normal = proc (_, pos) -> do
+basket normal = proc (oi, pos) -> do
   let bb = basketRect normal $ pos - normal * 0.5
   returnA -<
     ( mempty
         { oo_output =
             mconcat
-              [ billboard bb  $ V4 128 128 0 255
+              [ billboard oi bb $ V4 128 128 0 255
               , raw $ \r -> do
                   ellipse r
-                    (fmap round $ fst $ toScreen pos) 40 10 $ V4 255 0 0 255
+                    (fmap round $ fst $ toScreen (getCamera oi) pos) 40 10 $ V4 255 0 0 255
               ]
         }
     , pos

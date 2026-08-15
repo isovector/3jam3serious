@@ -148,11 +148,11 @@ renderPlayer :: SF (ObjInput, PlayerState) Output
 renderPlayer = proc (oi, ps) -> do
   ballZ <- fmap (abs . cos . (* 8)) time -< ()
   returnA -< mconcat
-    [ drawCapsule
+    [ drawCapsule oi
         (playerCapsule $ ps_pos ps)
         (teamColor $ oi_me oi)
     , flip (bool mempty) (ps_hasBall ps) $
-        drawCapsule
+        drawCapsule oi
           (ballCapsule $ (ps_pos ps + V3 0.25 0 0) & _z .~ ballZ)
           (V4 255 128 0 255)
     ]

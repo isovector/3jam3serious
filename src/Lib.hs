@@ -4,7 +4,7 @@ import Control.Exception (bracket, bracket_)
 import Data.Map qualified as M
 import Data.Text (pack)
 import FRP.Yampa
-import Jam3Serious.Camera
+import Jam3Serious.Objects.Camera
 import Jam3Serious.Objects.Ball
 import Jam3Serious.Objects.Basket
 import Jam3Serious.Objects.Player
@@ -50,6 +50,7 @@ appSF = proc i -> do
             [ (Ball, object (ballState (V3 0 0 2) 0) ball)
             , (Basket T1, object (V3 (-5) 0 4) $ basket $ V3 1 0 0 )
             , (Basket T2, object (V3 5 0 4) $ basket $ V3 (-1) 0 0)
+            , (Camera, object (CameraState 0 (50 * 50) 10 Ball) camera)
             ]
         ) -< i
 

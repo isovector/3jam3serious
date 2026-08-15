@@ -47,12 +47,12 @@ ballElasticity :: Double
 ballElasticity = 0.8
 
 motionBall :: Time -> Bezier Double (V3 Double) -> ObjE BallState ()
-motionBall dur bez = proc (_, bs) -> do
+motionBall dur bez = proc (oi, bs) -> do
   t <- time -< ()
   done <- after dur () -< ()
   vel <- derivative -< bs_pos bs
   returnA -<
-    ( ( mempty { oo_output = drawBall bs }
+    ( ( mempty { oo_output = drawBall oi bs }
       , bs
           & #bs_pos .~ runBezier bez (t / dur)
           & #bs_vel .~ vel
@@ -65,11 +65,17 @@ getBallPos = arr $ \(_, bs) -> ((mempty, bs), pure $ bs_pos bs)
 
 ball :: Obj BallState
 ball = foreverSwont $ do
-  e <- swont physicsBall
-  pos <- swont getBallPos
-  case e of
-    PassTo goal -> passTo pos goal
-    ShootAt goal -> shootAt pos goal
+  swont getBallPos >>= flip shootAt (V3 (-5) 0 4)
+  timeout 3 $ swont physicsBall
+  swont getBallPos >>= flip passTo (V3 (5) 0 4)
+  timeout 3 $ swont physicsBall
+
+
+  -- e <- swont physicsBall
+  -- pos <- swont getBallPos
+  -- case e of
+  --   PassTo goal -> passTo pos goal
+  --   ShootAt goal -> shootAt pos goal
 
 
 passTo :: V3 Double -> V3 Double -> ObjSwont BallState ()
@@ -94,11 +100,13 @@ midControlOffset, shootControlOffset :: V3 Double
 midControlOffset = V3 0 0 4
 shootControlOffset = V3 0 0 3
 
-drawBall :: BallState -> Output
-drawBall bs =
-  drawCapsule
-    (ballCapsule $ bs_pos bs)
-    (V4 255 128 0 255)
+drawBall :: ObjInput -> BallState -> Output
+drawBall oi bs = mconcat
+  [ billboard oi courtFloor $ V4 92 92 92 255
+  , drawCapsule oi
+      (ballCapsule $ bs_pos bs)
+      (V4 255 128 0 255)
+  ]
 
 
 data BallAction
@@ -119,10 +127,7 @@ physicsBall = proc (oi, bs) -> do
   returnA -<
     (
       ( mempty
-          { oo_output = mconcat
-              [ billboard courtFloor $ V4 92 92 92 255
-              , drawBall bs
-              ]
+          { oo_output = drawBall oi bs
           , oo_outbox = mempty
               -- broadcastAt
               --   (

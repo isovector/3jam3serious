@@ -116,6 +116,7 @@ data Name
   = Player Team PlayerNum
   | Ball
   | Basket Team
+  | Camera
   deriving stock (Eq, Ord, Show, Generic)
 
 data Mail a = Mail
