@@ -3,40 +3,41 @@ module Jam3Serious.Yampa
   ) where
 
 import Control.Monad
-import Data.Function (fix)
 import Data.IORef
-import FRP.Yampa (DTime)
-import FRP.Yampa.Simulation (evalAtZero, evalAt)
+import Data.Time.Clock.System (SystemTime, getSystemTime, systemSeconds, systemNanoseconds)
+import FRP.Yampa (DTime, reactimate)
 import Jam3Serious.Types
 import qualified SDL
 
 
+floatSeconds :: SystemTime -> Double
+floatSeconds t
+  = fromIntegral (systemSeconds t)
+  + fromIntegral (systemNanoseconds t) / 1e9
+
+
 runSF :: SDL.Renderer -> SF Input Output -> IO ()
 runSF renderer sf = do
-  input0 <- sampleInput 0
-  let (out0, future0) = evalAtZero sf input0
-  runOutput out0 renderer
-  SDL.present renderer
+  t0 <- fmap floatSeconds getSystemTime
+  time_ref <- newIORef t0
 
-  ref <- newIORef future0
-  t0  <- SDL.ticks
+  reactimate
+    (sampleInput 0)
+    (\_ -> do
+      t <- readIORef time_ref
+      t' <- fmap floatSeconds getSystemTime
+      writeIORef time_ref t'
 
-  flip fix t0 $ \loop prevTicks -> do
-    events <- SDL.pollEvents
-    let quit = any isQuitEvent events
-
-    nowTicks <- SDL.ticks
-    let dt :: DTime
-        dt = fromIntegral (nowTicks - prevTicks) / 1000.0
-
-    future <- readIORef ref
-    input  <- sampleInput dt
-    let (out, future') = evalAt future dt input
-    writeIORef ref future'
-
-    runOutput out renderer
-    SDL.present renderer
-    unless quit $ loop nowTicks
+      let dt = t' - t
+      when (dt > 0.017) $ putStrLn $ "Slow frame! dt=" <> show dt
+      fmap ((dt,) . Just) $ sampleInput dt
+    )
+    (\_ out -> do
+      runOutput out renderer
+      SDL.present renderer
+      fmap (any isQuitEvent) SDL.pollEvents
+    )
+    sf
 
 
 sampleInput :: DTime -> IO Input

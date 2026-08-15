@@ -33,6 +33,7 @@ dependencies:
 - sdl2
 - sdl2-gfx
 - text
+- time
 
 ghc-options:
 - -Wall
