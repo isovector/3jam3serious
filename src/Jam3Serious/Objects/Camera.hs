@@ -66,7 +66,7 @@ toScreen camPos (V3 wx wy wz) =
     )
   where
     cam = lookAt (V3 0 30 20) (V3 0 0 0) $ V3 0 0 1
-    pos = identity & translation .~ (camPos & _z %~ negate)
+    pos = identity & translation .~ (camPos & _yz %~ negate)
     m = cam !*! pos
     V4 sx sy _ sw = projection !*! m !* V4 (-wx) wy wz 1
 

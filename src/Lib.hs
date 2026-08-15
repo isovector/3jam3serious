@@ -50,7 +50,7 @@ appSF = proc i -> do
             [ (Ball, object (ballState (V3 0 0 2) 0) ball)
             , (Basket T1, object (V3 (-5) 0 4) $ basket $ V3 1 0 0 )
             , (Basket T2, object (V3 5 0 4) $ basket $ V3 (-1) 0 0)
-            , (Camera, object (CameraState 0 (50 * 50) 10 Ball) camera)
+            , (Camera, object (CameraState 0 (50 * 50) 20 Ball) camera)
             ]
         ) -< i
 

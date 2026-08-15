@@ -65,7 +65,7 @@ getBallPos = arr $ \(_, bs) -> ((mempty, bs), pure $ bs_pos bs)
 
 ball :: Obj BallState
 ball = foreverSwont $ do
-  swont getBallPos >>= flip shootAt (V3 (-5) 0 4)
+  swont getBallPos >>= flip shootAt (V3 (-5) (-4) 3)
   timeout 3 $ swont physicsBall
   swont getBallPos >>= flip passTo (V3 (5) 0 4)
   timeout 3 $ swont physicsBall
@@ -102,7 +102,7 @@ shootControlOffset = V3 0 0 3
 
 drawBall :: ObjInput -> BallState -> Output
 drawBall oi bs = mconcat
-  [ billboard oi courtFloor $ V4 92 92 92 255
+  [ foldMap (uncurry $ billboard oi) court
   , drawCapsule oi
       (ballCapsule $ bs_pos bs)
       (V4 255 128 0 255)
@@ -114,14 +114,35 @@ data BallAction
   | PassTo (V3 Double)
   deriving stock (Eq, Ord, Show)
 
-courtFloor :: Rect3 Double
-courtFloor = Rect3 0 (V3 (28.65 / 2) 0 0) (V3 0 (15.24 / 2) 0)
+court :: [(Rect3 Double, V4 Word8)]
+court =
+  [ -- floor
+    (Rect3 0 (V3 w 0 0) (V3 0 d 0), V4 92 92 92 255)
+  , -- ceiling
+    (Rect3 (V3 0 0 height) (V3 0 d 0) (V3 w 0 0) , V4 0 0 0 0)
+  , -- back wall
+    (Rect3 (V3 0 (-d) h) (V3 0 0 h) (V3 w 0 0), V4 0 0 0 92)
+  , -- left wall
+    (Rect3 (V3 (-w) 0 h) (V3 0 d 0) (V3 0 0 h) , V4 0 0 0 92)
+  , -- right wall
+    (Rect3 (V3 w 0 h) (V3 0 0 h) (V3 0 d 0), V4 0 0 0 92)
+  , -- front wall
+    (Rect3 (V3 0 d h)  (V3 w 0 0) (V3 0 0 h), V4 0 0 0 0)
+  ]
+  where
+    width = 28.65
+    depth = 15.24
+    height = 10
+    w = width / 2
+    d = depth / 2
+    h = height / 2
+
 
 physicsBall :: ObjE BallState BallAction
 physicsBall = proc (oi, bs) -> do
   pickup <- onMail @PickedUp -< oi
   follow <- onMail @BallAction -< oi
-  bounce <- rect3Bounce courtFloor -< bs_pos bs
+  bounce <- foldMap (\r -> fmap (fmap Endo) $ rect3Bounce r) $ fmap fst court -< bs_pos bs
 
 
   returnA -<
@@ -142,7 +163,7 @@ physicsBall = proc (oi, bs) -> do
           }
       , bs
           & #bs_vel +~ ballGravity ^* i_dt (oi_input oi)
-          & #bs_vel %~ appEndo (on bounce $ \f -> Endo $ f . (^* ballElasticity))
+          & #bs_vel %~ appEndo (on bounce $ \f -> f <> Endo (^* ballElasticity))
           & #bs_pos +~ bs_vel bs ^* i_dt (oi_input oi)
       )
     , fmap message follow
