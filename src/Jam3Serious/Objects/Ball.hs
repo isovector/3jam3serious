@@ -1,5 +1,6 @@
 module Jam3Serious.Objects.Ball where
 
+import Jam3Serious.Objects.Basket
 import GHC.Generics
 import Data.Bezier
 import Data.Map qualified as M
@@ -47,10 +48,11 @@ ballElasticity :: Double
 ballElasticity = 0.8
 
 motionBall :: Time -> Bezier Double (V3 Double) -> ObjE BallState ()
-motionBall dur bez = proc (oi, bs) -> do
+motionBall dur bez = fmap (fmap void) $ bouncing $ proc (oi, bs) -> do
   t <- time -< ()
   done <- after dur () -< ()
   vel <- derivative -< bs_pos bs
+
   returnA -<
     ( ( mempty { oo_output = drawBall oi bs }
       , bs
@@ -65,9 +67,13 @@ getBallPos = arr $ \(_, bs) -> ((mempty, bs), pure $ bs_pos bs)
 
 ball :: Obj BallState
 ball = foreverSwont $ do
-  swont getBallPos >>= flip shootAt (V3 (-5) (-4) 3)
+  swont getBallPos >>= flip shootAt (V3 (-5) 0 4)
   timeout 3 $ swont physicsBall
   swont getBallPos >>= flip passTo (V3 (5) 0 4)
+  timeout 3 $ swont physicsBall
+  swont getBallPos >>= flip passTo (V3 (-5) 0 4)
+  timeout 3 $ swont physicsBall
+  swont getBallPos >>= flip shootAt (V3 (5) 0 4)
   timeout 3 $ swont physicsBall
 
 
@@ -128,6 +134,13 @@ court =
     (Rect3 (V3 w 0 h) (V3 0 0 h) (V3 0 d 0), V4 0 0 0 92)
   , -- front wall
     (Rect3 (V3 0 d h)  (V3 w 0 0) (V3 0 0 h), V4 0 0 0 0)
+
+    -- left basket
+  , (basketRect (V3 1 0 0) (V3 (-5.5) 0 4), V4 255 0 0 255)
+  , (basketRect (V3 (-1) 0 0) (V3 (-5.55) 0 4), V4 255 0 0 255)
+    -- right basket
+  , (basketRect (V3 (-1) 0 0) (V3 (5.5) 0 4), V4 255 0 0 255)
+  , (basketRect (V3 1 0 0) (V3 5.55 0 4), V4 255 0 0 255)
   ]
   where
     width = 28.65
@@ -137,13 +150,20 @@ court =
     d = depth / 2
     h = height / 2
 
+bouncing :: ObjE BallState e -> ObjE BallState (Maybe e)
+bouncing sf = proc i -> do
+  bounce <- foldMap (\r -> fmap (fmap Endo) $ rect3Bounce r) $ fmap fst court -< bs_pos $ snd i
+  oo <- sf -< i
+  returnA -<
+    oo
+      & _1 . _2 . #bs_vel %~ appEndo (on bounce $ \f -> f <> Endo (^* ballElasticity))
+      & _2 %~ event (Nothing <$ bounce) (pure . Just)
+
 
 physicsBall :: ObjE BallState BallAction
-physicsBall = proc (oi, bs) -> do
+physicsBall = fmap (fmap $ (maybe noEvent pure =<<)) $ bouncing $ proc (oi, bs) -> do
   pickup <- onMail @PickedUp -< oi
   follow <- onMail @BallAction -< oi
-  bounce <- foldMap (\r -> fmap (fmap Endo) $ rect3Bounce r) $ fmap fst court -< bs_pos bs
-
 
   returnA -<
     (
@@ -163,7 +183,6 @@ physicsBall = proc (oi, bs) -> do
           }
       , bs
           & #bs_vel +~ ballGravity ^* i_dt (oi_input oi)
-          & #bs_vel %~ appEndo (on bounce $ \f -> f <> Endo (^* ballElasticity))
           & #bs_pos +~ bs_vel bs ^* i_dt (oi_input oi)
       )
     , fmap message follow

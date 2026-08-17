@@ -50,6 +50,7 @@ library
       GeneralizedNewtypeDeriving
       Arrows
       OverloadedLabels
+      StrictData
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints
   build-depends:
       Yampa
@@ -81,6 +82,7 @@ executable 3jam3serious-exe
       GeneralizedNewtypeDeriving
       Arrows
       OverloadedLabels
+      StrictData
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       3jam3serious
@@ -115,6 +117,7 @@ test-suite tests
       GeneralizedNewtypeDeriving
       Arrows
       OverloadedLabels
+      StrictData
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       3jam3serious

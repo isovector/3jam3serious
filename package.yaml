@@ -50,6 +50,7 @@ default-extensions:
 - GeneralizedNewtypeDeriving
 - Arrows
 - OverloadedLabels
+- StrictData
 
 library:
   source-dirs: src

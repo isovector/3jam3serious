@@ -6,7 +6,7 @@ module Jam3Serious.Prelude
 import Debug.Trace as X (traceShowId)
 import Control.Applicative as X
 import Control.Arrow as X
-import Control.Lens as X ((+~), (<>~), (.~), (%~), (#), (&), view, set, over, (^.), (^..), Lens', Prism', Traversal', has)
+import Control.Lens as X ((+~), (<>~), (.~), (%~), (#), (&), view, set, over, (^.), (^..), Lens', Prism', Traversal', has, _1, _2, _3)
 import Control.Monad as X
 import Control.Monad.Cont
 import Data.Bool as X (bool)
