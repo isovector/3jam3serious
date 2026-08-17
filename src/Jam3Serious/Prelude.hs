@@ -18,7 +18,7 @@ import Data.Maybe as X
 import Data.Monoid as X
 import Data.Set as X (Set)
 import Data.Word as X
-import FRP.Yampa as X hiding ((^/), (^+^), (^-^), (*^), normalize, dot, norm)
+import FRP.Yampa as X hiding ((^/), (^+^), (^-^), (*^), normalize, dot, norm, now)
 import GHC.Generics as X (Generic, Generically(..))
 import Jam3Serious.Types as X
 import Linear.Metric as X

@@ -65,9 +65,9 @@ teamColor (Player T2 _) = V4 0 0 255 255
 teamColor _ = V4 0 0 0 255
 
 
-data PNode
-  = RegularGame
-  | GoTo (V2 Double)
+data PlayerAction
+  = WalkTo (V2 Double)
+  -- | ShovedFrom (V2 Double)
 
 walkSpeed :: Num a => a
 walkSpeed = 3
@@ -79,15 +79,14 @@ runSpeed = 6
 player :: Obj PlayerState
 player = foreverSwont $ do
   swont runPlayer >>= \case
-   GoTo goal -> swont $ gotoPlayer goal
-   RegularGame -> pure ()
+   WalkTo goal -> swont $ gotoPlayer goal
 
 
 gotoPlayer :: V2 Double -> ObjE PlayerState ()
 gotoPlayer goal = proc (oi, ps) -> do
   let pos = ps_pos ps ^. _xy
   let dist = distance pos goal
-  arrived <- edge -< dist <= 0.1
+  arrived <- edge -< dist <= 0.01
   rendered <- renderPlayer -< (oi, ps)
   returnA -<
     ( ( mempty { oo_output = rendered }
@@ -98,7 +97,16 @@ gotoPlayer goal = proc (oi, ps) -> do
 
 
 
-runPlayer :: ObjE PlayerState PNode
+onceUntil :: SF (Event a, Event clear) (Event a)
+onceUntil = proc (ea, eclear) -> do
+  rec
+    let ea' = gate ea canSend
+    canSend <- dHold True -< asum [True <$ eclear, False <$ ea']
+  returnA -< ea'
+
+
+
+runPlayer :: ObjE PlayerState PlayerAction
 runPlayer = proc (oi, ps) -> do
   ctrl <-
     case ps_playable ps of
@@ -110,37 +118,43 @@ runPlayer = proc (oi, ps) -> do
           , c_run = False
           }
 
-  pickup <- onMail @PickMeUp -< oi
-  changeState <- fmap (fmap message) $ onMail @PNode -< oi
+  couldPickup <- onMail @PickMeUp -< oi
 
-  let -- pass = Passing (oi_me oi) <$ gate (c_pass ctrl) (ps_hasBall ps)
-      -- shoot = FollowBezier 1 (mkShootBezier oi T2) <$ gate (c_shoot ctrl) (ps_hasBall ps)
-      teammate = nearestTeammate oi
+  let pass = PassTo (V3 0 0 0) <$ gate (c_pass ctrl) (ps_hasBall ps)
+      shoot = ShootAt (V3 (-5) 0 4) <$ gate (c_shoot ctrl) (ps_hasBall ps)
+
+  afterwards <- delayEvent 0.5 -< pass <|> shoot
+  pickup <- onceUntil -< (couldPickup, afterwards)
+
 
   rendered <- renderPlayer -< (oi, ps)
 
   returnA -< (, asum [ ]) $
     ( mempty
         { oo_output = rendered
-        , oo_outbox = undefined -- mconcat
-            -- [ on pickup $ respond PickedUp
-            -- , on shoot $ send Ball
-            -- ]
-        -- , oo_commands =
-        --     on ((FreeBall <$ shoot) <|> pass) $ \bs -> pure $
-        --       Spawn Ball
-        --         $ object
-        --             (ballState (ps_pos ps + V3 0 0 1.5) (maybe 0 (subtract $ ps_pos ps) (os_pos teammate)) bs)
-        --             ball
+        , oo_outbox = mconcat
+            [ on (traceEvent pickup) $ respond PickedUp
+            , on (shoot <|> pass) $ send Ball
+            ]
+        , oo_commands =
+            on (shoot <|> pass) $ const $ pure $
+              Spawn Ball
+                $ object
+                    (ballState
+                      (ps_pos ps + V3 0 0 1.5)
+                      0
+                      -- (maybe 0 (subtract $ ps_pos ps) (os_pos teammate))
+                    )
+                    ball
         }
     , ps
         & #ps_pos +~ (0 & _xy .~ c_dir ctrl) ^* (bool walkSpeed runSpeed (c_run ctrl) * i_dt (oi_input oi))
-        & #ps_hasBall %~ appEndo (mempty)
-              -- mconcat
-              --   [ on pickup (const $ Endo $ const True)
-              --   , on pass (const $ Endo $ const False)
-              --   , on shoot (const $ Endo $ const False)
-              --   ])
+        & #ps_hasBall %~ appEndo (
+              mconcat
+                [ on pickup (const $ Endo $ const True)
+                , on pass (const $ Endo $ const False)
+                , on shoot (const $ Endo $ const False)
+                ])
     )
 
 

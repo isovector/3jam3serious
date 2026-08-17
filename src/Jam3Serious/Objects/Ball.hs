@@ -1,3 +1,4 @@
+
 module Jam3Serious.Objects.Ball where
 
 import Jam3Serious.Objects.Basket
@@ -10,7 +11,7 @@ import Jam3Serious.Drawing
 import Jam3Serious.Geometry
 import Jam3Serious.Mail
 import Jam3Serious.Prelude
-import qualified SDL
+
 
 data FollowBezier = FollowBezier
   { fb_dur :: !Double
@@ -67,21 +68,21 @@ getBallPos = arr $ \(_, bs) -> ((mempty, bs), pure $ bs_pos bs)
 
 ball :: Obj BallState
 ball = doPickup $ foreverSwont $ do
-  swont getBallPos >>= flip shootAt (V3 (-5) 0 4)
-  timeout 3 $ swont physicsBall
-  swont getBallPos >>= flip passTo (V3 (5) 0 4)
-  timeout 3 $ swont physicsBall
-  swont getBallPos >>= flip passTo (V3 (-5) 0 4)
-  timeout 3 $ swont physicsBall
-  swont getBallPos >>= flip shootAt (V3 (5) 0 4)
-  timeout 3 $ swont physicsBall
+  -- swont getBallPos >>= flip shootAt (V3 (-5) 0 4)
+  -- timeout 3 $ swont physicsBall
+  -- swont getBallPos >>= flip passTo (V3 (5) 0 4)
+  -- timeout 3 $ swont physicsBall
+  -- swont getBallPos >>= flip passTo (V3 (-5) 0 4)
+  -- timeout 3 $ swont physicsBall
+  -- swont getBallPos >>= flip shootAt (V3 (5) 0 4)
+  -- timeout 3 $ swont physicsBall
 
 
-  -- e <- swont physicsBall
-  -- pos <- swont getBallPos
-  -- case e of
-  --   PassTo goal -> passTo pos goal
-  --   ShootAt goal -> shootAt pos goal
+  e <- swont physicsBall
+  pos <- swont getBallPos
+  case e of
+    PassTo goal -> passTo pos goal
+    ShootAt goal -> shootAt pos goal
 
 
 passTo :: V3 Double -> V3 Double -> ObjSwont BallState ()
@@ -123,7 +124,7 @@ data BallAction
 court :: [(Rect3 Double, V4 Word8)]
 court =
   [ -- floor
-    (Rect3 0 (V3 w 0 0) (V3 0 d 0), V4 92 92 92 255)
+    (Rect3 0 (V3 w 0 0) (V3 0 d 0), V4 92 92 92 128)
   , -- ceiling
     (Rect3 (V3 0 0 height) (V3 0 d 0) (V3 w 0 0) , V4 0 0 0 0)
   , -- back wall
@@ -168,7 +169,6 @@ physicsBall = fmap (fmap $ (maybe noEvent pure =<<)) $ bouncing $ proc (oi, bs) 
     (
       ( mempty
           { oo_output = drawBall oi bs
-          , oo_outbox = mempty
           }
       , bs
           & #bs_vel +~ ballGravity ^* i_dt (oi_input oi)
@@ -182,8 +182,8 @@ doPickup sf = proc i@(oi, bs) -> do
   pickup <- onMail @PickedUp -< oi
   (oo, bs') <- sf -< i
   returnA -<
-    ( oo
-        { oo_commands = on pickup $ const $ pure Die
+    ( oo <> mempty
+        { oo_commands =  on pickup $ const $ pure Die
         , oo_outbox =
             broadcastAt
               (const True)

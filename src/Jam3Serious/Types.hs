@@ -123,7 +123,7 @@ data Mail a = Mail
   { from :: !Name
   , message :: !a
   }
-  deriving stock (Generic, Functor, Foldable, Traversable)
+  deriving stock (Show, Generic, Functor, Foldable, Traversable)
 
 data ObjectMap a = ObjectMap
   { om_objects  :: Map Name a
