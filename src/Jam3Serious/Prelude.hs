@@ -13,7 +13,7 @@ import Data.Bool as X (bool)
 import Data.Dynamic as X (Dynamic, toDyn, fromDynamic, Typeable)
 import Data.Generics.Labels ()
 import Data.Map as X (Map)
-import Data.Map.Monoidal as X (MonoidalMap)
+import Data.Map.Monoidal.Strict as X (MonoidalMap)
 import Data.Maybe as X
 import Data.Monoid as X
 import Data.Set as X (Set)

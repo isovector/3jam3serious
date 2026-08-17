@@ -4,7 +4,7 @@ import Jam3Serious.Objects.Basket
 import GHC.Generics
 import Data.Bezier
 import Data.Map qualified as M
-import Data.Map.Monoidal qualified as MM
+import Data.Map.Monoidal.Strict qualified as MM
 import Data.Monoid
 import Jam3Serious.Drawing
 import Jam3Serious.Geometry
@@ -66,7 +66,7 @@ getBallPos :: ObjE BallState (V3 Double)
 getBallPos = arr $ \(_, bs) -> ((mempty, bs), pure $ bs_pos bs)
 
 ball :: Obj BallState
-ball = foreverSwont $ do
+ball = doPickup $ foreverSwont $ do
   swont getBallPos >>= flip shootAt (V3 (-5) 0 4)
   timeout 3 $ swont physicsBall
   swont getBallPos >>= flip passTo (V3 (5) 0 4)
@@ -162,7 +162,6 @@ bouncing sf = proc i -> do
 
 physicsBall :: ObjE BallState BallAction
 physicsBall = fmap (fmap $ (maybe noEvent pure =<<)) $ bouncing $ proc (oi, bs) -> do
-  pickup <- onMail @PickedUp -< oi
   follow <- onMail @BallAction -< oi
 
   returnA -<
@@ -170,16 +169,6 @@ physicsBall = fmap (fmap $ (maybe noEvent pure =<<)) $ bouncing $ proc (oi, bs) 
       ( mempty
           { oo_output = drawBall oi bs
           , oo_outbox = mempty
-              -- broadcastAt
-              --   (
-              --     case bs_state bs of
-              --       FreeBall -> has #_Player
-              --       Passing from -> \n -> has #_Player n && n /= from
-              --   )
-              --   PickMeUp
-              --   (ballCapsule $ bs_pos bs)
-              --   (oi_everyone oi)
-          , oo_commands = on pickup $ const $ pure Die
           }
       , bs
           & #bs_vel +~ ballGravity ^* i_dt (oi_input oi)
@@ -187,6 +176,24 @@ physicsBall = fmap (fmap $ (maybe noEvent pure =<<)) $ bouncing $ proc (oi, bs) 
       )
     , fmap message follow
     )
+
+doPickup :: Obj BallState -> Obj BallState
+doPickup sf = proc i@(oi, bs) -> do
+  pickup <- onMail @PickedUp -< oi
+  (oo, bs') <- sf -< i
+  returnA -<
+    ( oo
+        { oo_commands = on pickup $ const $ pure Die
+        , oo_outbox =
+            broadcastAt
+              (const True)
+              PickMeUp
+              (ballCapsule $ bs_pos bs)
+              (oi_everyone oi)
+        }
+    , bs'
+    )
+
 
 broadcastAt
     :: Typeable a
@@ -209,17 +216,4 @@ ballState pos dir = BallState
   { bs_pos = pos
   , bs_vel = dir
   }
-
-
-mkRect :: Num a => V2 a -> OriginRect a -> SDL.Rectangle a
-mkRect xy (OriginRect origin sz) = SDL.Rectangle (SDL.P $ xy - origin) sz
-
-
-posInRect :: (Ord a, Num a) => V2 a -> SDL.Rectangle a -> Bool
-posInRect (V2 x y) (SDL.Rectangle (SDL.P (V2 l t)) (V2 w h)) = and
-  [ l <= x
-  , t <= y
-  , x <= l + w
-  , y <= t + h
-  ]
 

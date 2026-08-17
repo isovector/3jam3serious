@@ -1,6 +1,6 @@
 module Jam3Serious.Mail where
 
-import Data.Map.Monoidal qualified as MM
+import Data.Map.Monoidal.Strict qualified as MM
 import Jam3Serious.Prelude
 
 
