@@ -35,7 +35,7 @@ main = bracket_ SDL.initializeAll SDL.quit $ do
 
 appSF :: SF Input Output
 appSF = proc i -> do
-  let bg = raw $ \renderer -> do
+  let bg = flip raw DDCourt $ \renderer -> do
         SDL.rendererDrawColor renderer SDL.$= V4 100 149 237 255
         SDL.clear renderer
   objs
@@ -43,7 +43,7 @@ appSF = proc i -> do
         ( flip ObjectMap mempty
         $ M.fromList
             [ (Player T1 $ PlayerNum 0, object (PlayerState (V3 (-1) 0 0) True False) player)
-            -- , (Player T1 $ PlayerNum 1, object (PlayerState (V3 2 (-2) 0) False False) player)
+            -- , (Player T2 $ PlayerNum 1, object (PlayerState (V3 2 (-2) 0) False False) player)
             -- , (Player T1 $ PlayerNum 2, object (PlayerState (V3 (-2) 2 0) False False) player)
             -- , (Player T2 $ PlayerNum 0, object (PlayerState (V3 0 0 0) False False) player)
             -- , (Player T2 $ PlayerNum 1, object (PlayerState (V3 2 2 0) False False) player)

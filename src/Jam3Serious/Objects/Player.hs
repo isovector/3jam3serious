@@ -161,14 +161,17 @@ runPlayer = proc (oi, ps) -> do
 renderPlayer :: SF (ObjInput, PlayerState) Output
 renderPlayer = proc (oi, ps) -> do
   ballZ <- fmap (abs . cos . (* 8)) time -< ()
+  let depth = DDDepth $ view _y $ ps_pos ps
   returnA -< mconcat
     [ drawCapsule oi
         (playerCapsule $ ps_pos ps)
         (teamColor $ oi_me oi)
+        depth
     , flip (bool mempty) (ps_hasBall ps) $
         drawCapsule oi
           (ballCapsule $ (ps_pos ps + V3 0.25 0 0) & _z .~ ballZ)
           (V4 255 128 0 255)
+          depth
     ]
 
 

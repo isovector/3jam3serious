@@ -2,6 +2,8 @@ module Jam3Serious.Yampa
   ( runSF
   ) where
 
+import Data.Foldable
+import Data.Map.Monoidal.Strict qualified as MM
 import Control.Monad
 import Data.IORef
 import Data.Time.Clock.System (SystemTime, getSystemTime, systemSeconds, systemNanoseconds)
@@ -33,7 +35,7 @@ runSF renderer sf = do
       fmap ((dt,) . Just) $ sampleInput dt
     )
     (\_ out -> do
-      runOutput out renderer
+      fold (fmap snd $ MM.toList $ runOutput out) renderer
       SDL.present renderer
       fmap (any isQuitEvent) SDL.pollEvents
     )

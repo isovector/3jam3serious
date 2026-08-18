@@ -20,7 +20,7 @@ getCamera oi =
   fromMaybe 0 $ os_pos =<< M.lookup Camera (oi_everyone oi)
 
 
-drawCapsule :: ObjInput -> Capsule Double -> V4 Word8 -> Output
+drawCapsule :: ObjInput -> Capsule Double -> V4 Word8 -> DrawDepth -> Output
 drawCapsule oi (Capsule t b r xyz) color = raw $ \renderer -> do
   let cam = getCamera oi
       (fmap round -> top, st) = toScreen cam $ xyz + V3 0 0 t
@@ -37,7 +37,7 @@ drawCapsule oi (Capsule t b r xyz) color = raw $ \renderer -> do
   horizontalLine renderer bot rb color
 
 
-billboard :: ObjInput -> Rect3 Double -> V4 Word8 -> Output
+billboard :: ObjInput -> Rect3 Double -> V4 Word8 -> DrawDepth -> Output
 billboard oi r color = raw $ \renderer -> do
   let cam = getCamera oi
       V4 tl tr br bl = fmap (fst . toScreen cam) $ rectCorners r

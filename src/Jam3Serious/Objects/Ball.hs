@@ -109,10 +109,11 @@ shootControlOffset = V3 0 0 3
 
 drawBall :: ObjInput -> BallState -> Output
 drawBall oi bs = mconcat
-  [ foldMap (uncurry $ billboard oi) court
+  [ foldMap (\(r3, c) -> billboard oi r3 c DDCourt) court
   , drawCapsule oi
       (ballCapsule $ bs_pos bs)
       (V4 255 128 0 255)
+      (DDDepth $ view _y $ bs_pos bs)
   ]
 
 

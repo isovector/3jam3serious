@@ -16,6 +16,7 @@ import Control.Arrow
 import Data.Dynamic
 import Data.Map.Strict (Map)
 import Data.Map.Monoidal.Strict (MonoidalMap)
+import Data.Map.Monoidal.Strict qualified as MM
 import Data.Monoid
 import Data.Profunctor
 import FRP.Yampa (Event(..), SF, DTime, VectorSpace, mergeBy, noEvent, dSwitch)
@@ -69,18 +70,20 @@ data Input = Input
   }
   deriving stock Generic
 
+data DrawDepth
+  = DDCourt
+  | DDDepth Double
+  | DDGUI
+  deriving stock (Eq, Ord, Show)
 
 newtype Output = Output
-  { runOutput :: SDL.Renderer -> IO ()
+  { runOutput :: MonoidalMap DrawDepth (SDL.Renderer -> IO ())
   }
   deriving newtype (Semigroup, Monoid)
 
 
-raw :: (SDL.Renderer -> IO ()) -> Output
-raw = Output
-
-
-
+raw :: (SDL.Renderer -> IO ()) -> DrawDepth -> Output
+raw f dd = Output $ MM.singleton dd f
 
 
 data ObjInput = ObjInput
