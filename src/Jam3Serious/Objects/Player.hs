@@ -133,7 +133,7 @@ runPlayer = proc (oi, ps) -> do
     ( mempty
         { oo_output = rendered
         , oo_outbox = mconcat
-            [ on (traceEvent pickup) $ respond PickedUp
+            [ on pickup $ respond PickedUp
             , on (shoot <|> pass) $ send Ball
             ]
         , oo_commands =

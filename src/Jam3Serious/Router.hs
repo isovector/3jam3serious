@@ -41,7 +41,7 @@ router' objs0 =
         . om_objects
         . fmap fst
         . snd
-      ) >>> notYet
+      ) >>> iPre NoEvent
     )
     (\om f -> router' $ f $ om { om_messages = mempty })
 

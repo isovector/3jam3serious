@@ -1,4 +1,3 @@
-
 module Jam3Serious.Objects.Ball where
 
 import Jam3Serious.Objects.Basket
@@ -184,10 +183,10 @@ doPickup sf = proc i@(oi, bs) -> do
   (oo, bs') <- sf -< i
   returnA -<
     ( oo <> mempty
-        { oo_commands =  on pickup $ const $ pure Die
+        { oo_commands = on pickup $ const $ pure Die
         , oo_outbox =
             broadcastAt
-              (const True)
+              (has #_Player)
               PickMeUp
               (ballCapsule $ bs_pos bs)
               (oi_everyone oi)
