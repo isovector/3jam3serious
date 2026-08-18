@@ -116,7 +116,8 @@ data Team = T1 | T2
   deriving stock (Eq, Ord, Show, Enum, Bounded, Generic)
 
 data Name
-  = Player !Team !PlayerNum
+  = Court
+  | Player !Team !PlayerNum
   | Ball
   | Basket !Team
   | Camera

@@ -1,14 +1,14 @@
 module Jam3Serious.Objects.Ball where
 
-import Jam3Serious.Objects.Basket
-import GHC.Generics
 import Data.Bezier
 import Data.Map qualified as M
 import Data.Map.Monoidal.Strict qualified as MM
 import Data.Monoid
+import GHC.Generics
 import Jam3Serious.Drawing
 import Jam3Serious.Geometry
 import Jam3Serious.Mail
+import Jam3Serious.Objects.Court
 import Jam3Serious.Prelude
 
 
@@ -108,8 +108,7 @@ shootControlOffset = V3 0 0 3
 
 drawBall :: ObjInput -> BallState -> Output
 drawBall oi bs = mconcat
-  [ foldMap (\(r3, c) -> billboard oi r3 c DDCourt) court
-  , drawCapsule oi
+  [ drawCapsule oi
       (ballCapsule $ bs_pos bs)
       (V4 255 128 0 255)
       (DDDepth $ view _y $ bs_pos bs)
@@ -121,39 +120,9 @@ data BallAction
   | PassTo (V3 Double)
   deriving stock (Eq, Ord, Show)
 
-court :: [(Rect3 Double, V4 Word8)]
-court =
-  [ -- floor
-    (Rect3 0 (V3 w 0 0) (V3 0 d 0), V4 92 92 92 128)
-  , -- ceiling
-    (Rect3 (V3 0 0 height) (V3 0 d 0) (V3 w 0 0) , V4 0 0 0 0)
-  , -- back wall
-    (Rect3 (V3 0 (-d) h) (V3 0 0 h) (V3 w 0 0), V4 0 0 0 92)
-  , -- left wall
-    (Rect3 (V3 (-w) 0 h) (V3 0 d 0) (V3 0 0 h) , V4 0 0 0 92)
-  , -- right wall
-    (Rect3 (V3 w 0 h) (V3 0 0 h) (V3 0 d 0), V4 0 0 0 92)
-  , -- front wall
-    (Rect3 (V3 0 d h)  (V3 w 0 0) (V3 0 0 h), V4 0 0 0 0)
-
-    -- left basket
-  , (basketRect (V3 1 0 0) (V3 (-5.5) 0 4), V4 255 0 0 255)
-  , (basketRect (V3 (-1) 0 0) (V3 (-5.55) 0 4), V4 255 0 0 255)
-    -- right basket
-  , (basketRect (V3 (-1) 0 0) (V3 (5.5) 0 4), V4 255 0 0 255)
-  , (basketRect (V3 1 0 0) (V3 5.55 0 4), V4 255 0 0 255)
-  ]
-  where
-    width = 28.65
-    depth = 15.24
-    height = 10
-    w = width / 2
-    d = depth / 2
-    h = height / 2
-
 bouncing :: ObjE BallState e -> ObjE BallState (Maybe e)
 bouncing sf = proc i -> do
-  bounce <- foldMap (\r -> fmap (fmap Endo) $ rect3Bounce r) $ fmap fst court -< bs_pos $ snd i
+  bounce <- foldMap (\r -> fmap (fmap Endo) $ rect3Bounce r) $ fmap fst courtGeom -< bs_pos $ snd i
   oo <- sf -< i
   returnA -<
     oo

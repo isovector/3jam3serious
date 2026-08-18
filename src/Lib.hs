@@ -5,6 +5,7 @@ import Data.Map qualified as M
 import Data.Text (pack)
 import FRP.Yampa
 import Jam3Serious.Objects.Camera
+import Jam3Serious.Objects.Court
 import Jam3Serious.Objects.Ball
 import Jam3Serious.Objects.Basket
 import Jam3Serious.Objects.Player
@@ -43,6 +44,7 @@ appSF = proc i -> do
         ( flip ObjectMap mempty
         $ M.fromList
             [ (Player T1 $ PlayerNum 0, object (PlayerState (V3 (-1) 0 0) True False) player)
+            , (Court, object () court)
             -- , (Player T2 $ PlayerNum 1, object (PlayerState (V3 2 (-2) 0) False False) player)
             -- , (Player T1 $ PlayerNum 2, object (PlayerState (V3 (-2) 2 0) False False) player)
             -- , (Player T2 $ PlayerNum 0, object (PlayerState (V3 0 0 0) False False) player)
