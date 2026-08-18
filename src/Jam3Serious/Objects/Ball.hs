@@ -5,6 +5,7 @@ import Data.Map qualified as M
 import Data.Map.Monoidal.Strict qualified as MM
 import Data.Monoid
 import GHC.Generics
+import Jam3Serious.Objects.Camera
 import Jam3Serious.Drawing
 import Jam3Serious.Geometry
 import Jam3Serious.Mail
@@ -148,17 +149,20 @@ physicsBall = fmap (fmap $ (maybe noEvent pure =<<)) $ bouncing $ proc (oi, bs) 
 
 doPickup :: Obj BallState -> Obj BallState
 doPickup sf = proc i@(oi, bs) -> do
+  spawn <- now () -< ()
   pickup <- onMail @PickedUp -< oi
   (oo, bs') <- sf -< i
   returnA -<
     ( oo <> mempty
         { oo_commands = on pickup $ const $ pure Die
-        , oo_outbox =
-            broadcastAt
-              (has #_Player)
-              PickMeUp
-              (ballCapsule $ bs_pos bs)
-              (oi_everyone oi)
+        , oo_outbox = mconcat
+            [ broadcastAt
+                (has #_Player)
+                PickMeUp
+                (ballCapsule $ bs_pos bs)
+                (oi_everyone oi)
+            , on spawn $ const $ send Camera RefocusOnMe
+            ]
         }
     , bs'
     )

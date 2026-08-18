@@ -32,6 +32,7 @@ library
       Jam3Serious.Objects.Ball
       Jam3Serious.Objects.Basket
       Jam3Serious.Objects.Camera
+      Jam3Serious.Objects.Court
       Jam3Serious.Objects.Player
       Jam3Serious.Prelude
       Jam3Serious.Router

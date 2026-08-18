@@ -9,6 +9,7 @@ import Jam3Serious.Drawing
 import Jam3Serious.Mail
 import Jam3Serious.Objects.Ball
 import Jam3Serious.Objects.Basket
+import Jam3Serious.Objects.Camera
 import Jam3Serious.Prelude
 
 
@@ -134,6 +135,7 @@ runPlayer = proc (oi, ps) -> do
         { oo_output = rendered
         , oo_outbox = mconcat
             [ on pickup $ respond PickedUp
+            , on pickup $ const $ send Camera RefocusOnMe
             , on (shoot <|> pass) $ send Ball
             ]
         , oo_commands =
