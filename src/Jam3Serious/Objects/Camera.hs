@@ -70,3 +70,11 @@ toScreen camPos (V3 wx wy wz) =
     m = cam !*! pos
     V4 sx sy _ sw = projection !*! m !* V4 (-wx) wy wz 1
 
+
+toScreenNormalized :: V3 Double -> V3 Double -> V2 Double
+toScreenNormalized cam
+  = (* V2 (2 / windowWidth) (2 / windowHeight))
+  . subtract (V2 (windowWidth / 2) (windowHeight / 2))
+  . fst
+  . toScreen cam
+

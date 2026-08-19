@@ -11,6 +11,8 @@ import Jam3Serious.Objects.Ball
 import Jam3Serious.Objects.Basket
 import Jam3Serious.Objects.Camera
 import Jam3Serious.Prelude
+import Data.Ord (clamp)
+import SDL.Primitive (fillPie, fillCircle)
 
 
 onPress :: Num a => Scancode -> a -> Input -> a
@@ -162,19 +164,57 @@ runPlayer = proc (oi, ps) -> do
 
 renderPlayer :: SF (ObjInput, PlayerState) Output
 renderPlayer = proc (oi, ps) -> do
-  ballZ <- fmap (abs . cos . (* 8)) time -< ()
-  let depth = DDDepth $ view _y $ ps_pos ps
-  returnA -< mconcat
-    [ drawCapsule oi
-        (playerCapsule $ ps_pos ps)
-        (teamColor $ oi_me oi)
-        depth
-    , flip (bool mempty) (ps_hasBall ps) $
-        drawCapsule oi
-          (ballCapsule $ (ps_pos ps + V3 0.25 0 0) & _z .~ ballZ)
-          (V4 255 128 0 255)
-          depth
-    ]
+  let spos@(V2 scx scy) = toScreenNormalized (getCamera oi) $ ps_pos ps
+      on_screen = and
+        [ -deadzone <= scx
+        , scx <= deadzone
+        , -deadzone <= scy
+        , scy <= deadzone
+        ]
+      color = teamColor $ oi_me oi
+  case on_screen of
+    True -> do
+      ballZ <- fmap (abs . cos . (* 8)) time -< ()
+      let depth = DDDepth $ view _y $ ps_pos ps
+      returnA -< mconcat
+        [ drawCapsule oi
+            (playerCapsule $ ps_pos ps)
+            color
+            depth
+        , flip (bool mempty) (ps_hasBall ps) $
+            drawCapsule oi
+              (ballCapsule $ (ps_pos ps + V3 0.25 0 0) & _z .~ ballZ)
+              (V4 255 128 0 255)
+              depth
+        ]
+    False -> do
+      let screenpos
+            = (V2 (windowWidth / 2) (windowHeight / 2) *)
+            $ fmap (clamp (-in_screen_zone, in_screen_zone)) spos + 1
+          dir = (atan2 scy scx * 180 / pi) + 180
+      returnA -< mconcat
+        [ flip raw DDGUI $ \renderer -> do
+            fillPie
+              renderer
+              (fmap round $ screenpos + normalize spos * pie_offset)
+              pie_radius
+              (round $ dir - pie_arc)
+              (round $ dir + pie_arc)
+              color
+            fillCircle
+              renderer
+              (fmap round $ screenpos - normalize spos * circle_offset)
+              circle_radius
+              color
+        ]
+  where
+    deadzone = 1.04
+    in_screen_zone = 0.925
+    pie_radius = 30
+    pie_arc = 45 / 2
+    pie_offset = 20
+    circle_offset = 8
+    circle_radius = 11
 
 
 nearestTeammate :: ObjInput -> ObjState
