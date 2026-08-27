@@ -30,17 +30,23 @@ arrows =
 
 data Controller = Controller
   { c_dir :: V2 Double
+  , c_jump :: Event ()
   , c_shoot :: Event ()
   , c_pass :: Event ()
   , c_run :: Bool
   }
 
+fallingEdge :: SF Bool (Event ())
+fallingEdge = edgeBy (\x y -> bool Nothing (Just ()) $ x && not y) True
+
 inputToController :: SF ObjInput Controller
 inputToController = proc (oi_input -> i) -> do
-  shoot <- edge -< i_keyboard i ScancodeSpace
+  jump <- edge -< i_keyboard i ScancodeSpace
+  shoot <- fallingEdge -< i_keyboard i ScancodeSpace
   pass <- edge -< i_keyboard i ScancodeF
   returnA -< Controller
     { c_dir = arrows i
+    , c_jump = jump
     , c_shoot = shoot
     , c_pass = pass
     , c_run = i_keyboard i ScancodeLShift
@@ -70,7 +76,9 @@ teamColor _ = V4 0 0 0 255
 
 data PlayerAction
   = WalkTo (V2 Double)
+  | Jump
   -- | ShovedFrom (V2 Double)
+  deriving stock (Eq, Ord, Show)
 
 walkSpeed :: Num a => a
 walkSpeed = 3
@@ -79,10 +87,23 @@ walkSpeed = 3
 runSpeed :: Num a => a
 runSpeed = 6
 
+getState :: (s -> r) -> ObjSwont s r
+getState f = swont $ arr $ \(_, s) -> ((mempty, s), Event $ f s)
+
+
 player :: Obj PlayerState
-player = foreverSwont $ do
+player = wrapPlayer $ foreverSwont $ do
   swont runPlayer >>= \case
    WalkTo goal -> swont $ gotoPlayer goal
+   Jump -> do
+     p <- getState ps_pos
+     let vel = V3 3 0 0
+         jumpHeight = 1.5
+     swont $ motionPlayer 1 $ bezier
+      [ p
+      , p + V3 0 0 (2 * jumpHeight) + vel * 0.5
+      , p + vel
+      ]
 
 
 gotoPlayer :: V2 Double -> ObjE PlayerState ()
@@ -100,6 +121,23 @@ gotoPlayer goal = proc (oi, ps) -> do
 
 
 
+motionPlayer :: Time -> Bezier Double (V3 Double) -> ObjE PlayerState ()
+motionPlayer dur bez = proc (oi, ps) -> do
+  t <- time -< ()
+  done <- after dur () -< ()
+
+  rendered <- renderPlayer -< (oi, ps)
+
+
+  returnA -<
+    ( ( mempty { oo_output = rendered }
+      , ps
+          & #ps_pos .~ runBezier bez (t / dur)
+      )
+    , done
+    )
+
+
 onceUntil :: SF (Event a, Event clear) (Event a)
 onceUntil = proc (ea, eclear) -> do
   rec
@@ -108,9 +146,10 @@ onceUntil = proc (ea, eclear) -> do
   returnA -< ea'
 
 
+wrapPlayer :: Obj PlayerState -> Obj PlayerState
+wrapPlayer sf = proc (oi, ps) -> do
+  (oo, ps') <- sf -< (oi, ps)
 
-runPlayer :: ObjE PlayerState PlayerAction
-runPlayer = proc (oi, ps) -> do
   ctrl <-
     case ps_playable ps of
       True -> inputToController -< oi
@@ -121,21 +160,16 @@ runPlayer = proc (oi, ps) -> do
           , c_run = False
           }
 
-  couldPickup <- onMail @PickMeUp -< oi
-
   let pass = PassTo (V3 0 0 0) <$ gate (c_pass ctrl) (ps_hasBall ps)
       shoot = ShootAt (V3 (-5) 0 4) <$ gate (c_shoot ctrl) (ps_hasBall ps)
 
+  couldPickup <- onMail @PickMeUp -< oi
   afterwards <- delayEvent 0.5 -< pass <|> shoot
   pickup <- onceUntil -< (couldPickup, afterwards)
 
-
-  rendered <- renderPlayer -< (oi, ps)
-
-  returnA -< (, asum [ ]) $
-    ( mempty
-        { oo_output = rendered
-        , oo_outbox = mconcat
+  returnA -<
+    ( ( oo <> mempty
+        { oo_outbox = mconcat
             [ on pickup $ respond PickedUp
             , on pickup $ const $ send Camera RefocusOnMe
             , on (shoot <|> pass) $ send Ball
@@ -151,14 +185,37 @@ runPlayer = proc (oi, ps) -> do
                     )
                     ball
         }
-    , ps
-        & #ps_pos +~ (0 & _xy .~ c_dir ctrl) ^* (bool walkSpeed runSpeed (c_run ctrl) * i_dt (oi_input oi))
+      , ps'
         & #ps_hasBall %~ appEndo (
               mconcat
                 [ on pickup (const $ Endo $ const True)
-                , on pass (const $ Endo $ const False)
-                , on shoot (const $ Endo $ const False)
+                , on pass   (const $ Endo $ const False)
+                , on shoot  (const $ Endo $ const False)
                 ])
+      )
+    )
+
+
+runPlayer :: ObjE PlayerState PlayerAction
+runPlayer = proc (oi, ps) -> do
+  ctrl <-
+    case ps_playable ps of
+      True -> inputToController -< oi
+      False -> do
+        c' <- inputToController -< oi
+        returnA -< c'
+          { c_dir = 0
+          , c_run = False
+          }
+
+  rendered <- renderPlayer -< (oi, ps)
+
+  returnA -< (, asum [ Jump <$ c_jump ctrl ]) $
+    ( mempty
+        { oo_output = rendered
+        }
+    , ps
+        & #ps_pos +~ (0 & _xy .~ c_dir ctrl) ^* (bool walkSpeed runSpeed (c_run ctrl) * i_dt (oi_input oi))
     )
 
 
