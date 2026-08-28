@@ -13,6 +13,10 @@ import Jam3Serious.Objects.Court
 import Jam3Serious.Prelude
 
 
+getBall :: ObjInput -> Maybe (V3 Double)
+getBall oi =
+  os_pos =<< M.lookup Ball (oi_everyone oi)
+
 data FollowBezier = FollowBezier
   { fb_dur :: !Double
   , fb_bez :: !(Bezier Double (V3 Double))
