@@ -1,7 +1,7 @@
 module Jam3Serious.Router where
 
 import Jam3Serious.Prelude
-import Data.Map qualified as M
+import Data.Map.Strict qualified as M
 import Data.Map.Monoidal.Strict qualified as MM
 
 
