@@ -87,8 +87,10 @@ walkSpeed = 3
 runSpeed :: Num a => a
 runSpeed = 6
 
-getState :: (s -> r) -> ObjSwont s r
-getState f = swont $ arr $ \(_, s) -> ((mempty, s), Event $ f s)
+getState :: SF (ObjInput, s) r -> ObjSwont s r
+getState f = swont $ proc i@(_, s) -> do
+  r <- f -< i
+  returnA  -< ((mempty, s), Event r)
 
 
 player :: Obj PlayerState
@@ -96,9 +98,11 @@ player = wrapPlayer $ foreverSwont $ do
   swont runPlayer >>= \case
    WalkTo goal -> swont $ gotoPlayer goal
    Jump -> do
-     p <- getState ps_pos
-     let vel = V3 3 0 0
-         jumpHeight = 1.5
+     p <- getState $ arr $ ps_pos . snd
+     dir <- getState $ controller >>> arr c_dir
+     let vel = 0 & _xy .~ dir * walkSpeed
+
+     let jumpHeight = 1.5
      swont $ motionPlayer 1 $ bezier
       [ p
       , p + V3 0 0 (2 * jumpHeight) + vel * 0.5
@@ -111,7 +115,7 @@ gotoPlayer goal = proc (oi, ps) -> do
   let pos = ps_pos ps ^. _xy
   let dist = distance pos goal
   arrived <- edge -< dist <= 0.01
-  rendered <- renderPlayer -< (oi, ps)
+  rendered <- renderPlayer -< (OnGround, oi, ps)
   returnA -<
     ( ( mempty { oo_output = rendered }
       , ps & #ps_pos ._xy +~ normalize (goal - pos) ^* min dist (walkSpeed * i_dt (oi_input oi))
@@ -126,7 +130,7 @@ motionPlayer dur bez = proc (oi, ps) -> do
   t <- time -< ()
   done <- after dur () -< ()
 
-  rendered <- renderPlayer -< (oi, ps)
+  rendered <- renderPlayer -< (Jumping, oi, ps)
 
 
   returnA -<
@@ -150,15 +154,7 @@ wrapPlayer :: Obj PlayerState -> Obj PlayerState
 wrapPlayer sf = proc (oi, ps) -> do
   (oo, ps') <- sf -< (oi, ps)
 
-  ctrl <-
-    case ps_playable ps of
-      True -> inputToController -< oi
-      False -> do
-        c' <- inputToController -< oi
-        returnA -< c'
-          { c_dir = 0
-          , c_run = False
-          }
+  ctrl <- controller -< (oi, ps)
 
   let pass = PassTo (V3 0 0 0) <$ gate (c_pass ctrl) (ps_hasBall ps)
       shoot = ShootAt (V3 (-5) 0 4) <$ gate (c_shoot ctrl) (ps_hasBall ps)
@@ -196,9 +192,8 @@ wrapPlayer sf = proc (oi, ps) -> do
     )
 
 
-runPlayer :: ObjE PlayerState PlayerAction
-runPlayer = proc (oi, ps) -> do
-  ctrl <-
+controller :: SF (ObjInput, PlayerState) Controller
+controller = proc (oi, ps) -> do
     case ps_playable ps of
       True -> inputToController -< oi
       False -> do
@@ -208,7 +203,12 @@ runPlayer = proc (oi, ps) -> do
           , c_run = False
           }
 
-  rendered <- renderPlayer -< (oi, ps)
+
+runPlayer :: ObjE PlayerState PlayerAction
+runPlayer = proc (oi, ps) -> do
+  ctrl <- controller -< (oi, ps)
+
+  rendered <- renderPlayer -< (OnGround, oi, ps)
 
   returnA -< (, asum [ Jump <$ c_jump ctrl ]) $
     ( mempty
@@ -219,8 +219,20 @@ runPlayer = proc (oi, ps) -> do
     )
 
 
-renderPlayer :: SF (ObjInput, PlayerState) Output
-renderPlayer = proc (oi, ps) -> do
+data GroundState = OnGround | Jumping
+  deriving stock (Eq, Ord, Show)
+
+ballPosX :: Double
+ballPosX = 0.25
+
+filterZero :: Event Double -> Event Double
+filterZero (Event 0) = NoEvent
+filterZero x = x
+
+renderPlayer :: SF (GroundState, ObjInput, PlayerState) Output
+renderPlayer = proc (gs, oi, ps) -> do
+  old <- iPre 0 -< ps_pos ps ^. _x
+  balldir <- hold 1 <<< arr filterZero <<< onChange -< signum $ ps_pos ps ^. _x - old
   let spos@(V2 scx scy) = toScreenNormalized (getCamera oi) $ ps_pos ps
       on_screen = and
         [ -deadzone <= scx
@@ -240,7 +252,7 @@ renderPlayer = proc (oi, ps) -> do
             depth
         , flip (bool mempty) (ps_hasBall ps) $
             drawCapsule oi
-              (ballCapsule $ (ps_pos ps + V3 0.25 0 0) & _z .~ ballZ)
+              (ballCapsule $ (ps_pos ps + V3 (balldir * ballPosX) 0 0) & _z +~ bool shootHeight ballZ (gs == OnGround))
               (V4 255 128 0 255)
               depth
         ]
