@@ -2,6 +2,7 @@
 
 module Jam3Serious.Objects.Player where
 
+import Jam3Serious.Geometry
 import Data.Bezier
 import Data.List (sortOn)
 import Data.Map qualified as M
@@ -165,6 +166,15 @@ wrapPlayer getCtrls sf = proc (oi, ps) -> do
   afterwards <- delayEvent 0.5 -< pass <|> shoot
   pickup <- onceUntil -< (couldPickup, afterwards)
 
+  let collisions = (^* i_dt (oi_input oi)) $ normalize $ set _z 0 $ sum $ do
+        (who@Player{}, o) <- M.toList $ oi_everyone oi
+        guard $ who /= oi_me oi
+        Just cap <- pure $ os_collision o
+        Just pos <- pure $ os_pos o
+        guard $ capsuleInCapsule (playerCapsule $ ps_pos ps) cap
+        let dist = set _z 0 $ ps_pos ps - pos
+        pure $ normalize dist
+
   returnA -<
     ( ( oo <> mempty
         { oo_outbox = mconcat
@@ -190,12 +200,23 @@ wrapPlayer getCtrls sf = proc (oi, ps) -> do
                 , on pass   (const $ Endo $ const False)
                 , on shoot  (const $ Endo $ const False)
                 ])
+        & #ps_pos +~ collisions
       )
     )
 
 
 playerController :: SF (ObjInput, PlayerState) Controller
 playerController = proc (oi, _) -> inputToController -< oi
+
+stupidController :: SF (ObjInput, PlayerState) Controller
+stupidController = proc (_, ps) -> do
+  returnA -< Controller
+    { c_dir = 0
+    , c_jump = NoEvent
+    , c_shoot = NoEvent
+    , c_pass = NoEvent
+    , c_run = False
+    }
 
 behindController :: V3 Double -> SF (ObjInput, PlayerState) Controller
 behindController offset = proc (oi, ps) -> do
