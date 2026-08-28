@@ -46,13 +46,13 @@ appSF = proc i -> do
             [ (Player T1 $ PlayerNum 0, object (PlayerState (V3 (-1) 0 0) False) $ player playerController)
             , (Court, object () court)
             , (Player T2 $ PlayerNum 1, object (PlayerState (V3 2 (-2) 0) False) $ player $ behindController (V3 3 0 0))
-            , (Player T2 $ PlayerNum 2, object (PlayerState (V3 3 (3) 0) False) $ player $ behindController (V3 (-3) 0 0))
+            , (Player T2 $ PlayerNum 2, object (PlayerState (V3 5 (5) 0) False) $ player $ behindController (V3 (-3) 0 0))
             -- , (Player T1 $ PlayerNum 2, object (PlayerState (V3 (-2) 2 0) False False) player)
             -- , (Player T2 $ PlayerNum 0, object (PlayerState (V3 0 0 0) False False) player)
             -- , (Player T2 $ PlayerNum 1, object (PlayerState (V3 2 2 0) False False) player)
             , (Ball, object (ballState (V3 0 1 2) 0) ball)
-            , (Basket T1, object (V3 (-5) 0 4) $ basket $ V3 1 0 0 )
-            , (Basket T2, object (V3 5 0 4) $ basket $ V3 (-1) 0 0)
+            , (Basket T1, object (V3 (-12) 0 4) $ basket $ V3 1 0 0 )
+            , (Basket T2, object (V3 12 0 4) $ basket $ V3 (-1) 0 0)
             , (Camera, object (CameraState 0 (50 * 50) 20 Ball) camera)
             ]
         ) -< i

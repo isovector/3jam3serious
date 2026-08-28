@@ -23,11 +23,11 @@ courtGeom =
     (Rect3 (V3 0 d h)  (V3 w 0 0) (V3 0 0 h), V4 0 0 0 0)
 
     -- left basket
-  , (basketRect (V3 1 0 0) (V3 (-5.5) 0 4), V4 255 0 0 255)
-  , (basketRect (V3 (-1) 0 0) (V3 (-5.55) 0 4), V4 255 0 0 255)
+  , (basketRect (V3 1 0 0) (V3 (-12.5) 0 4), V4 255 0 0 255)
+  , (basketRect (V3 (-1) 0 0) (V3 (-12.55) 0 4), V4 255 0 0 255)
     -- right basket
-  , (basketRect (V3 (-1) 0 0) (V3 (5.5) 0 4), V4 255 0 0 255)
-  , (basketRect (V3 1 0 0) (V3 5.55 0 4), V4 255 0 0 255)
+  , (basketRect (V3 (-1) 0 0) (V3 (12.5) 0 4), V4 255 0 0 255)
+  , (basketRect (V3 1 0 0) (V3 12.55 0 4), V4 255 0 0 255)
   ]
   where
     width = 28.65

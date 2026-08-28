@@ -159,7 +159,7 @@ wrapPlayer getCtrls sf = proc (oi, ps) -> do
 
 
   let pass = PassTo (V3 0 0 0) <$ gate (c_pass ctrl) (ps_hasBall ps)
-      shoot = ShootAt (V3 (-5) 0 4) <$ gate (c_shoot ctrl) (ps_hasBall ps)
+      shoot = ShootAt (V3 (-12) 0 4) <$ gate (c_shoot ctrl) (ps_hasBall ps)
 
   couldPickup <- onMail @PickMeUp -< oi
   afterwards <- delayEvent 0.5 -< pass <|> shoot
