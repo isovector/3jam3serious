@@ -3,16 +3,19 @@
 module Jam3Serious.Drawing where
 
 import Control.Lens
+import Data.Atlas
 import Data.Int
-import Data.Map qualified as M
+import Data.Map.Strict qualified as M
 import Data.Maybe (fromMaybe)
 import Data.Word
+import FRP.Yampa
 import GHC.Exts (fromList)
 import Jam3Serious.Geometry
 import Jam3Serious.Objects.Camera
 import Jam3Serious.Types
 import Linear.V4
 import SDL.Primitive
+import SDL qualified as SDL
 
 
 getCamera :: ObjInput -> V3 Double
@@ -50,4 +53,26 @@ billboard oi r color = raw $ \renderer _ -> do
     (fromList $ fmap (view _y) poly)
     color
   line renderer c c' (V4 255 0 0 92)
+
+
+drawSprite :: (Gfx -> Atlas) -> SF (ObjInput, (String, Time), DrawDepth, V3 Double) Output
+drawSprite mkAtlas = proc (oi, (key, dur), depth, pos) -> do
+  t <- time -< ()
+  let frameno = floor $ t / dur
+  returnA -< flip raw depth $ \renderer gfx -> do
+    let atlas = mkAtlas gfx
+        cam = getCamera oi
+        (fmap round -> spos, st) = toScreen cam pos
+        frames = getAtlas atlas M.! key
+        frame = mod frameno $ length frames
+    SDL.copy
+      renderer
+      (atlasTexture atlas)
+      (Just $ frames !! frame)
+      (Just $ setRectXY spos (frames !! frame))
+
+
+-- TODO(sandy): total hack for now
+setRectXY :: Num a => V2 a -> SDL.Rectangle a -> SDL.Rectangle a
+setRectXY xy (SDL.Rectangle _ sz) = SDL.Rectangle (SDL.P $ xy - V2 20 80) sz
 

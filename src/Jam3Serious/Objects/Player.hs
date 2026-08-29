@@ -263,6 +263,19 @@ filterZero :: Event Double -> Event Double
 filterZero (Event 0) = NoEvent
 filterZero x = x
 
+
+standAnim :: (String, Time)
+standAnim = ("stand", 1)
+
+dstandAnim :: (String, Time)
+dstandAnim = ("dst", 0.09)
+
+runAnim :: (String, Time)
+runAnim = ("run", 0.09)
+
+drunAnim :: (String, Time)
+drunAnim = ("drun", 0.09)
+
 renderPlayer :: SF (GroundState, ObjInput, PlayerState) Output
 renderPlayer = proc (gs, oi, ps) -> do
   old <- iPre 0 -< ps_pos ps ^. _x
@@ -275,10 +288,12 @@ renderPlayer = proc (gs, oi, ps) -> do
         , scy <= deadzone
         ]
       color = teamColor $ oi_me oi
+
   case on_screen of
     True -> do
       ballZ <- fmap (abs . cos . (* 8)) time -< ()
       let depth = DDDepth $ view _y $ ps_pos ps
+      sprites <- drawSprite gfx_player -< (oi, (bool dstandAnim drunAnim $ ps_hasBall ps), depth, ps_pos ps)
       returnA -< mconcat
         [ drawCapsule oi
             (playerCapsule $ ps_pos ps)
@@ -289,6 +304,7 @@ renderPlayer = proc (gs, oi, ps) -> do
               (ballCapsule $ (ps_pos ps + V3 (balldir * ballPosX) 0 0) & _z +~ bool shootHeight ballZ (gs == OnGround))
               (V4 255 128 0 255)
               depth
+        , sprites
         ]
     False -> do
       let screenpos

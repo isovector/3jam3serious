@@ -4,7 +4,8 @@
 
 -- Tool for ingesting json from https://ilovesprites.com/tools/images-to-atlas
 module Data.Atlas
-  ( Atlas
+  ( Atlas(..)
+  , Atlas'(..)
   , loadAtlas
   ) where
 
@@ -13,8 +14,8 @@ import Data.Function (on)
 import Data.Char (isDigit)
 import Data.List (sortOn, groupBy)
 import GHC.Generics
-import Data.Map qualified as M
-import Data.Map (Map)
+import Data.Map.Strict qualified as M
+import Data.Map.Strict (Map)
 import Data.Aeson
 import SDL
 import Foreign.C.Types (CInt)
@@ -23,8 +24,8 @@ import qualified SDL.Video.Renderer as R
 type Atlas = Atlas' Texture
 
 data Atlas' a = Atlas
-  { _atlasTexture :: a
-  , _unAtlas :: Map String [Rectangle CInt]
+  { atlasTexture :: a
+  , getAtlas :: Map String [Rectangle CInt]
   }
   deriving stock (Functor, Foldable, Traversable)
 
