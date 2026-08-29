@@ -1,13 +1,14 @@
 module Lib (main) where
 
 import Control.Exception (bracket, bracket_)
+import Data.Atlas
 import Data.Map qualified as M
 import Data.Text (pack)
 import FRP.Yampa
-import Jam3Serious.Objects.Camera
-import Jam3Serious.Objects.Court
 import Jam3Serious.Objects.Ball
 import Jam3Serious.Objects.Basket
+import Jam3Serious.Objects.Camera
+import Jam3Serious.Objects.Court
 import Jam3Serious.Objects.Player
 import Jam3Serious.Prelude
 import Jam3Serious.Router
@@ -29,14 +30,15 @@ main = bracket_ SDL.initializeAll SDL.quit $ do
           windowHeight
       }
   renderer <- SDL.createRenderer window (-1) SDL.defaultRenderer
+  gfx <- Gfx <$> loadAtlas renderer "res/player.json"
   bracket (pure (window, renderer))
           (\(w, r) -> SDL.destroyRenderer r >> SDL.destroyWindow w)
-          (\_      -> runSF renderer appSF)
+          (\_      -> runSF renderer gfx appSF)
 
 
 appSF :: SF Input Output
 appSF = proc i -> do
-  let bg = flip raw DDCourt $ \renderer -> do
+  let bg = flip raw DDCourt $ \renderer _ -> do
         SDL.rendererDrawColor renderer SDL.$= V4 100 149 237 255
         SDL.clear renderer
   objs

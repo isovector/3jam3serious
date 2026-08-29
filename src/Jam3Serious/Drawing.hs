@@ -21,7 +21,7 @@ getCamera oi =
 
 
 drawCapsule :: ObjInput -> Capsule Double -> V4 Word8 -> DrawDepth -> Output
-drawCapsule oi (Capsule t b r xyz) color = raw $ \renderer -> do
+drawCapsule oi (Capsule t b r xyz) color = raw $ \renderer _ -> do
   let cam = getCamera oi
       (fmap round -> top, st) = toScreen cam $ xyz + V3 0 0 t
       (fmap round -> bot, sb) = toScreen cam $ xyz - V3 0 0 b
@@ -38,7 +38,7 @@ drawCapsule oi (Capsule t b r xyz) color = raw $ \renderer -> do
 
 
 billboard :: ObjInput -> Rect3 Double -> V4 Word8 -> DrawDepth -> Output
-billboard oi r color = raw $ \renderer -> do
+billboard oi r color = raw $ \renderer _ -> do
   let cam = getCamera oi
       V4 tl tr br bl = fmap (fst . toScreen cam) $ rectCorners r
       poly = fmap (fmap $ round @_ @Int16) [tl, tr, br, bl]

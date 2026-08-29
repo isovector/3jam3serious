@@ -8,6 +8,7 @@ module Jam3Serious.Types
   , SF
   ) where
 
+import Data.Atlas
 import FRP.Yampa qualified as Y
 import Control.Monad (forever)
 import Data.Void
@@ -77,14 +78,17 @@ data DrawDepth
   deriving stock (Eq, Ord, Show)
 
 newtype Output = Output
-  { runOutput :: MonoidalMap DrawDepth (SDL.Renderer -> IO ())
+  { runOutput :: MonoidalMap DrawDepth (SDL.Renderer -> Gfx -> IO ())
   }
   deriving newtype (Semigroup, Monoid)
 
 
-raw :: (SDL.Renderer -> IO ()) -> DrawDepth -> Output
+raw :: (SDL.Renderer -> Gfx -> IO ()) -> DrawDepth -> Output
 raw f dd = Output $ MM.singleton dd f
 
+data Gfx = Gfx
+  { gfx_player :: Atlas
+  }
 
 data ObjInput = ObjInput
   { oi_input :: !Input

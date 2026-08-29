@@ -25,6 +25,7 @@ source-repository head
 
 library
   exposed-modules:
+      Data.Atlas
       Data.Bezier
       Jam3Serious.Drawing
       Jam3Serious.Geometry
@@ -39,6 +40,7 @@ library
       Jam3Serious.Types
       Jam3Serious.Yampa
       Lib
+      SDL.JuicyPixels
   other-modules:
       Paths_3jam3serious
   autogen-modules:
@@ -54,7 +56,9 @@ library
       StrictData
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints
   build-depends:
-      Yampa
+      JuicyPixels
+    , Yampa
+    , aeson
     , base >=4.7 && <5
     , containers
     , generic-lens
@@ -67,6 +71,7 @@ library
     , sdl2-gfx
     , text
     , time
+    , vector
   default-language: GHC2024
 
 executable 3jam3serious-exe
@@ -87,7 +92,9 @@ executable 3jam3serious-exe
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       3jam3serious
+    , JuicyPixels
     , Yampa
+    , aeson
     , base >=4.7 && <5
     , containers
     , generic-lens
@@ -100,6 +107,7 @@ executable 3jam3serious-exe
     , sdl2-gfx
     , text
     , time
+    , vector
   default-language: GHC2024
 
 test-suite tests
@@ -122,8 +130,10 @@ test-suite tests
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       3jam3serious
+    , JuicyPixels
     , QuickCheck
     , Yampa
+    , aeson
     , base >=4.7 && <5
     , checkers
     , containers
@@ -139,4 +149,5 @@ test-suite tests
     , sdl2-gfx
     , text
     , time
+    , vector
   default-language: GHC2024

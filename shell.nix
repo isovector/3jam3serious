@@ -21,6 +21,7 @@ pkgs.haskell.lib.buildStackProject {
 
   buildInputs = [
     pkgs.SDL2
+    pkgs.zlib
     SDL2_gfx_symbolic
   ];
 }

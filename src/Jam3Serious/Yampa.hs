@@ -18,8 +18,8 @@ floatSeconds t
   + fromIntegral (systemNanoseconds t) / 1e9
 
 
-runSF :: SDL.Renderer -> SF Input Output -> IO ()
-runSF renderer sf = do
+runSF :: SDL.Renderer -> Gfx -> SF Input Output -> IO ()
+runSF renderer gfx sf = do
   t0 <- fmap floatSeconds getSystemTime
   time_ref <- newIORef t0
 
@@ -35,7 +35,7 @@ runSF renderer sf = do
       fmap ((dt,) . Just) $ sampleInput dt
     )
     (\_ out -> do
-      fold (fmap snd $ MM.toList $ runOutput out) renderer
+      fold (fmap snd $ MM.toList $ runOutput out) renderer gfx
       SDL.present renderer
       fmap (any isQuitEvent) SDL.pollEvents
     )
