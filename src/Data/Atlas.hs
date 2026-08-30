@@ -4,11 +4,13 @@
 
 -- Tool for ingesting json from https://ilovesprites.com/tools/images-to-atlas
 module Data.Atlas
-  ( Atlas(..)
+  ( Atlas
   , Atlas'(..)
   , loadAtlas
   ) where
 
+import Control.Lens ((&), (%~))
+import Control.Arrow
 import SDL.JuicyPixels
 import Data.Function (on)
 import Data.Char (isDigit)
@@ -25,7 +27,7 @@ type Atlas = Atlas' Texture
 
 data Atlas' a = Atlas
   { atlasTexture :: a
-  , getAtlas :: Map String [Rectangle CInt]
+  , getAtlas :: Map String [(Rectangle CInt, V2 CInt)]
   }
   deriving stock (Functor, Foldable, Traversable)
 
@@ -46,13 +48,20 @@ splitName :: FilePath -> (String, Int)
 splitName = fmap (read . mappend "0") . break isDigit
 
 
-parseFrames :: [Frame FilePath] -> Map String [Rectangle CInt]
+parseFrames :: [Frame FilePath] -> Map String [(Rectangle CInt, V2 CInt)]
 parseFrames fs = M.fromList $ do
   group
     <- groupBy (on (==) (fst . filename))
      $ fmap (fmap splitName)
      $ sortOn filename fs
-  pure (fst $ filename $ head group, fmap frame $ sortOn (snd . filename) group)
+  pure ( fst $ filename $ head group
+       , fmap (frame &&& mkOrigin . frame) $ sortOn (snd . filename) group
+       )
+
+
+mkOrigin :: Integral a => Rectangle a -> V2 a
+mkOrigin (Rectangle _ sz) =
+  sz & _x %~ (`div` 2)
 
 
 data Frame a = Frame
@@ -67,6 +76,6 @@ instance FromJSON (Rectangle CInt) where
   parseJSON = withObject "Rectangle" $ \obj ->
     fmap (fmap $ fromIntegral @Int) $
       Rectangle
-        <$> (((P .) . V2) <$> obj .: "x" <*> obj .: "y")
-        <*> (V2 <$> obj .: "w" <*> obj .: "h")
+        <$> fmap P (V2 <$> obj .: "x" <*> obj .: "y")
+        <*>        (V2 <$> obj .: "w" <*> obj .: "h")
 

@@ -64,15 +64,15 @@ drawSprite mkAtlas = proc (oi, (key, dur), depth, pos) -> do
         cam = getCamera oi
         (fmap round -> spos, st) = toScreen cam pos
         frames = getAtlas atlas M.! key
-        frame = mod frameno $ length frames
+        (rect, origin) = frames !! (mod frameno $ length frames)
     SDL.copy
       renderer
       (atlasTexture atlas)
-      (Just $ frames !! frame)
-      (Just $ setRectXY spos (frames !! frame))
+      (Just $ rect)
+      (Just $ setRectXY (spos - origin) rect)
 
 
 -- TODO(sandy): total hack for now
-setRectXY :: Num a => V2 a -> SDL.Rectangle a -> SDL.Rectangle a
-setRectXY xy (SDL.Rectangle _ sz) = SDL.Rectangle (SDL.P $ xy - V2 20 80) sz
+setRectXY :: V2 a -> SDL.Rectangle a -> SDL.Rectangle a
+setRectXY xy (SDL.Rectangle _ sz) = SDL.Rectangle (SDL.P xy) sz
 
