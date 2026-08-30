@@ -37,7 +37,7 @@ camera = proc (oi, cs) -> do
     , cs
         & #cs_focus %~ appEndo (on refocus $ Endo . const . from)
         & #cs_pos %~ \pos ->
-          case qd (fst $ toScreen pos focus) (fst $ toScreen pos pos) > cs_deadzone cs of
+          case qd (screenPos $ toScreen pos focus) (screenPos $ toScreen pos pos) > cs_deadzone cs of
             False -> pos
             True -> pos + min diff (cs_speed cs * i_dt (oi_input oi)) *^ normalize (focus - pos)
 
@@ -58,23 +58,37 @@ projection =
     35
 
 
-toScreen :: V3 Double -> V3 Double -> (V2 Double, Double)
+toScreen :: V3 Double -> V3 Double -> (V2 Double, Double, Double)
 toScreen camPos (V3 wx wy wz) =
     ( V2 ( sx * windowWidth  / (2 * sw) + windowWidth / 2)
          (-sy * windowHeight / (2 * sw) + windowHeight / 2)
+    -- Perspective size factor, normalized so that 0 is at the horizon
+    -- (infinite depth) and 1 is at the object the camera is centered on
+    -- (i.e. whatever sits at camPos), where it isn't foreshortened.
+    , refDepth / sw
+    -- Pixel-space size factor: how many pixels tall one world-space unit
+    -- spans at this depth.
     , (projection ^. _y._y) * windowHeight / (2 * sw)
     )
   where
-    cam = lookAt (V3 0 30 20) (V3 0 0 0) $ V3 0 0 1
+    camEye = V3 0 30 20
+    cam = lookAt camEye (V3 0 0 0) $ V3 0 0 1
     pos = identity & translation .~ (camPos & _yz %~ negate)
     m = cam !*! pos
+    -- Eye-space depth of an arbitrary world point.
+    depthOf (V3 x y z) = let V4 _ _ _ w = projection !*! m !* V4 (-x) y z 1 in w
+    refDepth = depthOf camPos
     V4 sx sy _ sw = projection !*! m !* V4 (-wx) wy wz 1
+
+
+screenPos :: (V2 Double, Double, Double) -> V2 Double
+screenPos (p, _, _) = p
 
 
 toScreenNormalized :: V3 Double -> V3 Double -> V2 Double
 toScreenNormalized cam
   = (* V2 (2 / windowWidth) (2 / windowHeight))
   . subtract (V2 (windowWidth / 2) (windowHeight / 2))
-  . fst
+  . screenPos
   . toScreen cam
 

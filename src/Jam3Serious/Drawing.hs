@@ -26,13 +26,13 @@ getCamera oi =
 drawCapsule :: ObjInput -> Capsule Double -> V4 Word8 -> DrawDepth -> Output
 drawCapsule oi (Capsule t b r xyz) color = raw $ \renderer _ -> do
   let cam = getCamera oi
-      (fmap round -> top, st) = toScreen cam $ xyz + V3 0 0 t
-      (fmap round -> bot, sb) = toScreen cam $ xyz - V3 0 0 b
-      (fmap round -> flr, sf) = toScreen cam $ xyz & _z .~ 0
+      (fmap round -> top, _, st) = toScreen cam $ xyz + V3 0 0 t
+      (fmap round -> bot, _, sb) = toScreen cam $ xyz - V3 0 0 b
+      (fmap round -> flr, _, sf) = toScreen cam $ xyz & _z .~ 0
       rt = round $ st * r
       rb = round $ sb * r
   fillCircle renderer flr (round $ sf * r) $ V4 0 0 0 255
-  pixel renderer (fmap round $ fst $ toScreen cam xyz) color
+  pixel renderer (fmap round $ screenPos $ toScreen cam xyz) color
   line renderer (top - V2 rt 0) (bot - V2 rb 0) color
   line renderer (top + V2 rt 0) (bot + V2 rb 0) color
   fillPie renderer top rt 180 0 color
@@ -43,10 +43,10 @@ drawCapsule oi (Capsule t b r xyz) color = raw $ \renderer _ -> do
 billboard :: ObjInput -> Rect3 Double -> V4 Word8 -> DrawDepth -> Output
 billboard oi r color = raw $ \renderer _ -> do
   let cam = getCamera oi
-      V4 tl tr br bl = fmap (fst . toScreen cam) $ rectCorners r
+      V4 tl tr br bl = fmap (screenPos . toScreen cam) $ rectCorners r
       poly = fmap (fmap $ round @_ @Int16) [tl, tr, br, bl]
-      c = fmap round $ fst $ toScreen cam $ r3_center r
-      c' = fmap round $ fst $ toScreen cam $ r3_center r + rectNormal r
+      c = fmap round $ screenPos $ toScreen cam $ r3_center r
+      c' = fmap round $ screenPos $ toScreen cam $ r3_center r + rectNormal r
   fillPolygon
     renderer
     (fromList $ fmap (view _x) poly)
@@ -54,25 +54,55 @@ billboard oi r color = raw $ \renderer _ -> do
     color
   line renderer c c' (V4 255 0 0 92)
 
+data Anim = Anim
+  { animKey :: String
+  , animRate :: Time
+  }
+  deriving stock (Eq, Ord, Show)
 
-drawSprite :: (Gfx -> Atlas) -> SF (ObjInput, (String, Time), DrawDepth, V3 Double) Output
-drawSprite mkAtlas = proc (oi, (key, dur), depth, pos) -> do
+data Animation = Animation
+  { a_mkAtlas :: Gfx -> Atlas
+  , a_key :: String
+  , a_frameno :: Int
+  }
+
+
+animate :: (Gfx -> Atlas) -> SF Anim Animation
+animate mkAtlas = proc anim -> do
   t <- time -< ()
-  let frameno = floor $ t / dur
-  returnA -< flip raw depth $ \renderer gfx -> do
+  let frameno = floor $ t / animRate anim
+  returnA -< Animation mkAtlas (animKey anim) frameno
+
+
+drawAnimation
+    :: Animation
+    -> ObjInput
+    -> V3 Double
+    -> V2 Bool
+    -> DrawDepth
+    -> Output
+drawAnimation (Animation mkAtlas key frameno) oi pos flips = raw $ \renderer gfx -> do
     let atlas = mkAtlas gfx
         cam = getCamera oi
-        (fmap round -> spos, st) = toScreen cam pos
+        (fmap round -> spos, sz, _) = toScreen cam pos
         frames = getAtlas atlas M.! key
         (rect, origin) = frames !! (mod frameno $ length frames)
-    SDL.copy
+    SDL.copyEx
       renderer
       (atlasTexture atlas)
       (Just $ rect)
-      (Just $ setRectXY (spos - origin) rect)
+      (Just $ setRectXY (spos - fmap round (fmap fromIntegral origin SDL.^* sz)) sz rect)
+      0
+      Nothing
+      flips
 
 
--- TODO(sandy): total hack for now
-setRectXY :: V2 a -> SDL.Rectangle a -> SDL.Rectangle a
-setRectXY xy (SDL.Rectangle _ sz) = SDL.Rectangle (SDL.P xy) sz
+setRectXY
+    :: Integral a
+    => V2 a
+    -> Double
+    -> SDL.Rectangle a
+    -> SDL.Rectangle a
+setRectXY xy dsz (SDL.Rectangle _ sz)
+  = SDL.Rectangle (SDL.P xy) $ fmap (round . (* dsz) . fromIntegral) sz
 

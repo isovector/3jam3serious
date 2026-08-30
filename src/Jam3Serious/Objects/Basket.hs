@@ -42,7 +42,7 @@ basket normal = proc (oi, pos) -> do
               [ billboard oi bb (V4 128 128 0 255) (DDDepth $ view _y pos)
               , flip raw (DDDepth $ view _y pos) $ \r _ -> do
                   ellipse r
-                    (fmap round $ fst $ toScreen (getCamera oi) pos) 40 10 $ V4 255 0 0 255
+                    (fmap round $ screenPos $ toScreen (getCamera oi) pos) 40 10 $ V4 255 0 0 255
               ]
         }
     , pos
