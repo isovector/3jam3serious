@@ -1,13 +1,13 @@
-{-# OPTIONS_GHC -Wno-orphans  #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Jam3Serious.Types
   ( module Jam3Serious.Types
   , V2(..)
   , V3(..)
   , V4(..)
-  , SF
   ) where
 
+import FRP.SFGlobal
 import Data.Atlas
 import FRP.Yampa qualified as Y
 import Control.Monad (forever)
@@ -20,16 +20,13 @@ import Data.Map.Monoidal.Strict (MonoidalMap)
 import Data.Map.Monoidal.Strict qualified as MM
 import Data.Monoid
 import Data.Profunctor
-import FRP.Yampa (Event(..), SF, DTime, VectorSpace, mergeBy, noEvent, dSwitch)
+import FRP.Yampa (Event(..), DTime, VectorSpace, mergeBy, noEvent)
 import Linear.Vector
 import GHC.Generics (Generic, Generic1, Generically(..), Generically1(..))
 import SDL (V2(..), V3(..), V4(..))
 import Linear.Metric (dot)
 import qualified SDL
 
-deriving via (Ap (SF a) b) instance Semigroup b => Semigroup (SF a b)
-deriving via (Ap (SF a) b) instance Monoid b => Monoid (SF a b)
-deriving via (Ap (SF a) b) instance Num b => Num (SF a b)
 deriving via (Ap ((->) a) b) instance Num b => Num (a -> b)
 deriving stock instance Foldable Event
 deriving stock instance Traversable Event
@@ -63,6 +60,14 @@ instance Profunctor SF where
   dimap f g sf = arr f >>> sf >>> arr g
 
 
+data Global = Global
+  { g_dt :: !DTime
+  , g_everyone :: !(Map Name ObjState)
+  }
+  deriving stock Generic
+
+type SF = SFG Global
+
 data Input = Input
   { i_keyboard :: SDL.Scancode -> Bool
   , i_mouse :: SDL.MouseButton -> Bool
@@ -94,7 +99,6 @@ data ObjInput = ObjInput
   { oi_input :: !Input
   , oi_inbox :: ![Mail Dynamic]
   , oi_me :: !Name
-  , oi_everyone :: Map Name ObjState
   }
   deriving stock (Generic)
 

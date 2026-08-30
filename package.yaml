@@ -37,6 +37,7 @@ dependencies:
 - aeson
 - JuicyPixels
 - vector
+- arrows
 
 ghc-options:
 - -Wall

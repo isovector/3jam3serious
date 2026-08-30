@@ -2,28 +2,29 @@
 
 module Jam3Serious.Drawing where
 
+import Control.Arrow
 import Control.Lens
 import Data.Atlas
 import Data.Int
 import Data.Map.Strict qualified as M
 import Data.Maybe (fromMaybe)
 import Data.Word
-import FRP.Yampa
+import FRP.SFGlobal
 import GHC.Exts (fromList)
 import Jam3Serious.Geometry
 import Jam3Serious.Objects.Camera
 import Jam3Serious.Types
 import Linear.V4
-import SDL.Primitive
 import SDL qualified as SDL
+import SDL.Primitive
 
 
-getCamera :: ObjInput -> V3 Double
-getCamera oi =
-  fromMaybe 0 $ os_pos =<< M.lookup Camera (oi_everyone oi)
+getCamera :: Global -> V3 Double
+getCamera g =
+  fromMaybe 0 $ os_pos =<< M.lookup Camera (g_everyone g)
 
 
-drawCapsule :: ObjInput -> Capsule Double -> V4 Word8 -> DrawDepth -> Output
+drawCapsule :: Global -> Capsule Double -> V4 Word8 -> DrawDepth -> Output
 drawCapsule oi (Capsule t b r xyz) color = raw $ \renderer _ -> do
   let cam = getCamera oi
       (fmap round -> top, _, st) = toScreen cam $ xyz + V3 0 0 t
@@ -40,7 +41,7 @@ drawCapsule oi (Capsule t b r xyz) color = raw $ \renderer _ -> do
   horizontalLine renderer bot rb color
 
 
-billboard :: ObjInput -> Rect3 Double -> V4 Word8 -> DrawDepth -> Output
+billboard :: Global -> Rect3 Double -> V4 Word8 -> DrawDepth -> Output
 billboard oi r color = raw $ \renderer _ -> do
   let cam = getCamera oi
       V4 tl tr br bl = fmap (screenPos . toScreen cam) $ rectCorners r
@@ -76,7 +77,7 @@ animate mkAtlas = proc anim -> do
 
 drawAnimation
     :: Animation
-    -> ObjInput
+    -> Global
     -> V3 Double
     -> V2 Bool
     -> DrawDepth

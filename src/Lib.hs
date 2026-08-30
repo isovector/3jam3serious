@@ -4,7 +4,7 @@ import Control.Exception (bracket, bracket_)
 import Data.Atlas
 import Data.Map qualified as M
 import Data.Text (pack)
-import FRP.Yampa
+import FRP.Yampa qualified as Y
 import Jam3Serious.Objects.Ball
 import Jam3Serious.Objects.Basket
 import Jam3Serious.Objects.Camera
@@ -36,7 +36,7 @@ main = bracket_ SDL.initializeAll SDL.quit $ do
           (\_      -> runSF renderer gfx appSF)
 
 
-appSF :: SF Input Output
+appSF :: Y.SF Input Output
 appSF = proc i -> do
   let bg = flip raw DDCourt $ \renderer _ -> do
         SDL.rendererDrawColor renderer SDL.$= V4 100 149 237 255

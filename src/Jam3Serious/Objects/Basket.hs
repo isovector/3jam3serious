@@ -35,22 +35,23 @@ basketRect normal pos = do
 basket :: V3 Double -> Obj (V3 Double)
 basket normal = proc (oi, pos) -> do
   let bb = basketRect normal $ pos - normal * 0.5
+  g <- global -< ()
   returnA -<
     ( mempty
         { oo_output =
             mconcat
-              [ billboard oi bb (V4 128 128 0 255) (DDDepth $ view _y pos)
+              [ billboard g bb (V4 128 128 0 255) (DDDepth $ view _y pos)
               , flip raw (DDDepth $ view _y pos) $ \r _ -> do
                   ellipse r
-                    (fmap round $ screenPos $ toScreen (getCamera oi) pos) 40 10 $ V4 255 0 0 255
+                    (fmap round $ screenPos $ toScreen (getCamera g) pos) 40 10 $ V4 255 0 0 255
               ]
         }
     , pos
     )
 
 
-netPos :: ObjInput -> Team -> V3 Double
-netPos oi t =
+netPos :: Global -> Team -> V3 Double
+netPos g t =
   fromMaybe (error $ "no net for team " <> show t) $
-    os_pos =<< M.lookup (Basket t) (oi_everyone oi)
+    os_pos =<< M.lookup (Basket t) (g_everyone g)
 

@@ -28,9 +28,10 @@ data Refocus = RefocusOnMe
 camera :: Obj CameraState
 camera = proc (oi, cs) -> do
   refocus <- onMail @Refocus -< oi
+  everyone <- fmap g_everyone global -< ()
 
   let focus = fromMaybe 0
-            $ os_pos =<< M.lookup (cs_focus cs) (oi_everyone oi)
+            $ os_pos =<< M.lookup (cs_focus cs) everyone
       diff = norm $ focus - cs_pos cs
   returnA -<
     ( mempty

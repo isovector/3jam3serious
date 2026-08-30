@@ -27,6 +27,7 @@ library
   exposed-modules:
       Data.Atlas
       Data.Bezier
+      FRP.SFGlobal
       Jam3Serious.Drawing
       Jam3Serious.Geometry
       Jam3Serious.Mail
@@ -59,6 +60,7 @@ library
       JuicyPixels
     , Yampa
     , aeson
+    , arrows
     , base >=4.7 && <5
     , containers
     , generic-lens
@@ -95,6 +97,7 @@ executable 3jam3serious-exe
     , JuicyPixels
     , Yampa
     , aeson
+    , arrows
     , base >=4.7 && <5
     , containers
     , generic-lens
@@ -134,6 +137,7 @@ test-suite tests
     , QuickCheck
     , Yampa
     , aeson
+    , arrows
     , base >=4.7 && <5
     , checkers
     , containers

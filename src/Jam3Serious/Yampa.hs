@@ -8,6 +8,7 @@ import Control.Monad
 import Data.IORef
 import Data.Time.Clock.System (SystemTime, getSystemTime, systemSeconds, systemNanoseconds)
 import FRP.Yampa (DTime, reactimate)
+import FRP.Yampa qualified as Y
 import Jam3Serious.Types
 import qualified SDL
 
@@ -18,7 +19,7 @@ floatSeconds t
   + fromIntegral (systemNanoseconds t) / 1e9
 
 
-runSF :: SDL.Renderer -> Gfx -> SF Input Output -> IO ()
+runSF :: SDL.Renderer -> Gfx -> Y.SF Input Output -> IO ()
 runSF renderer gfx sf = do
   t0 <- fmap floatSeconds getSystemTime
   time_ref <- newIORef t0

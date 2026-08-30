@@ -1,8 +1,9 @@
 module Jam3Serious.Geometry where
 
+import FRP.SFGlobal (edge)
 import Jam3Serious.Types
 import Linear
-import FRP.Yampa (edge, Event, gate, returnA)
+import FRP.Yampa (Event, gate, returnA)
 
 
 pointInCapsule :: (Num a, Ord a) => V3 a -> Capsule a -> Bool

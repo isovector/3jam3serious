@@ -43,6 +43,12 @@ instance ToObjState () where
 
 
 court :: Obj ()
-court = arr $ first $ \oi ->
-  mempty { oo_output = foldMap (\(r3, c) -> billboard oi r3 c DDCourt) courtGeom }
+court = proc _ -> do
+  g <- global -< ()
+  returnA -<
+    ( mempty
+        { oo_output = foldMap (\(r3, c) -> billboard g r3 c DDCourt) courtGeom
+        }
+    , ()
+    )
 

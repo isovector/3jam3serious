@@ -3,6 +3,7 @@ module Jam3Serious.Prelude
   , module Jam3Serious.Prelude
   ) where
 
+import FRP.SFGlobal as X
 import Debug.Trace as X (traceShowId)
 import Control.Applicative as X
 import Control.Arrow as X
@@ -18,7 +19,7 @@ import Data.Maybe as X
 import Data.Monoid as X
 import Data.Set as X (Set)
 import Data.Word as X
-import FRP.Yampa as X hiding ((^/), (^+^), (^-^), (*^), normalize, dot, norm)
+import FRP.Yampa as X (Event(..), noEvent, Time, maybeToEvent)
 import GHC.Generics as X (Generic, Generically(..))
 import Jam3Serious.Types as X
 import Linear.Metric as X

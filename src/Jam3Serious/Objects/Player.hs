@@ -165,9 +165,10 @@ wrapPlayer getCtrls sf = proc (oi, ps) -> do
   couldPickup <- onMail @PickMeUp -< oi
   afterwards <- delayEvent 0.5 -< pass <|> shoot
   pickup <- onceUntil -< (couldPickup, afterwards)
+  g <- global -< ()
 
   let collisions = (^* i_dt (oi_input oi)) $ normalize $ set _z 0 $ sum $ do
-        (who@Player{}, o) <- M.toList $ oi_everyone oi
+        (who@Player{}, o) <- M.toList $ g_everyone g
         guard $ who /= oi_me oi
         Just cap <- pure $ os_collision o
         Just pos <- pure $ os_pos o
@@ -220,8 +221,9 @@ stupidController = proc (_, ps) -> do
 
 behindController :: V3 Double -> SF (ObjInput, PlayerState) Controller
 behindController offset = proc (oi, ps) -> do
-  let ballPos = getBall oi
-  let camPos = getCamera oi
+  g <- global -< ()
+  let ballPos = getBall g
+  let camPos = getCamera g
   recvBall <- edge -< ps_hasBall ps
   doJump <- delay 1 NoEvent -< recvBall
   doShoot <- delay 0.5 NoEvent -< doJump
@@ -279,9 +281,10 @@ drunAnim = Anim "drun" 0.09
 
 renderPlayer :: SF (GroundState, ObjInput, PlayerState) Output
 renderPlayer = proc (gs, oi, ps) -> do
+  g <- global -< ()
   old <- iPre 0 -< ps_pos ps ^. _x
   balldir <- hold 1 <<< arr filterZero <<< onChange -< signum $ ps_pos ps ^. _x - old
-  let spos@(V2 scx scy) = toScreenNormalized (getCamera oi) $ ps_pos ps
+  let spos@(V2 scx scy) = toScreenNormalized (getCamera g) $ ps_pos ps
       on_screen = and
         [ -deadzone <= scx
         , scx <= deadzone
@@ -298,18 +301,18 @@ renderPlayer = proc (gs, oi, ps) -> do
         <- animate gfx_player
         -< bool dstandAnim drunAnim $ ps_hasBall ps
       returnA -< mconcat
-        [ drawCapsule oi
+        [ drawCapsule g
             (playerCapsule $ ps_pos ps)
             color
             depth
         , flip (bool mempty) (ps_hasBall ps) $
-            drawCapsule oi
+            drawCapsule g
               (ballCapsule $ (ps_pos ps + V3 (balldir * ballPosX) 0 0) & _z +~ bool shootHeight ballZ (gs == OnGround))
               (V4 255 128 0 255)
               depth
         , drawAnimation
             anim
-            oi
+            g
             (ps_pos ps)
             (V2 (balldir < 0) False)
             depth
@@ -344,22 +347,22 @@ renderPlayer = proc (gs, oi, ps) -> do
     circle_radius = 11
 
 
-nearestTeammate :: ObjInput -> ObjState
-nearestTeammate oi = fromMaybe (error "no teammate?") $ do
+nearestTeammate :: Global -> ObjInput -> ObjState
+nearestTeammate g oi = fromMaybe (error "no teammate?") $ do
   me@(Player meteam _) <- pure $ oi_me oi
-  mepos <- os_pos =<< M.lookup me (oi_everyone oi)
+  mepos <- os_pos =<< M.lookup me (g_everyone g)
   fmap snd $ listToMaybe $ sortOn fst $ do
-    (name@(Player team _), os) <- M.toList $ oi_everyone oi
+    (name@(Player team _), os) <- M.toList $ g_everyone g
     guard $ team == meteam && name /= me
     pos <- maybeToList $  os_pos os
     pure (qd mepos pos, os)
 
 
-mkShootBezier :: ObjInput -> Team -> Bezier Double (V3 Double)
-mkShootBezier oi t = bezier
+mkShootBezier :: Global -> ObjInput -> Team -> Bezier Double (V3 Double)
+mkShootBezier g oi t = bezier
   [ (fromMaybe (error $ "no pos for me " <> show (oi_me oi)) $
-      os_pos =<< M.lookup (oi_me oi) (oi_everyone oi)) + V3 0 0 shootHeight
-  , netPos oi t + V3 0 0 3
-  , netPos oi t
+      os_pos =<< M.lookup (oi_me oi) (g_everyone g)) + V3 0 0 shootHeight
+  , netPos g t + V3 0 0 3
+  , netPos g t
   ]
 

@@ -13,9 +13,9 @@ import Jam3Serious.Objects.Court
 import Jam3Serious.Prelude
 
 
-getBall :: ObjInput -> Maybe (V3 Double)
-getBall oi =
-  os_pos =<< M.lookup Ball (oi_everyone oi)
+getBall :: Global -> Maybe (V3 Double)
+getBall g =
+  os_pos =<< M.lookup Ball (g_everyone g)
 
 data FollowBezier = FollowBezier
   { fb_dur :: !Double
@@ -57,9 +57,10 @@ motionBall dur bez = fmap (fmap void) $ bouncing $ proc (oi, bs) -> do
   t <- time -< ()
   done <- after dur () -< ()
   vel <- derivative -< bs_pos bs
+  g <- global -< ()
 
   returnA -<
-    ( ( mempty { oo_output = drawBall oi bs }
+    ( ( mempty { oo_output = drawBall g bs }
       , bs
           & #bs_pos .~ runBezier bez (t / dur)
           & #bs_vel .~ vel
@@ -111,9 +112,9 @@ midControlOffset, shootControlOffset :: V3 Double
 midControlOffset = V3 0 0 4
 shootControlOffset = V3 0 0 3
 
-drawBall :: ObjInput -> BallState -> Output
-drawBall oi bs = mconcat
-  [ drawCapsule oi
+drawBall :: Global -> BallState -> Output
+drawBall g bs = mconcat
+  [ drawCapsule g
       (ballCapsule $ bs_pos bs)
       (V4 255 128 0 255)
       (DDDepth $ view _y $ bs_pos bs)
@@ -138,11 +139,12 @@ bouncing sf = proc i -> do
 physicsBall :: ObjE BallState BallAction
 physicsBall = fmap (fmap $ (maybe noEvent pure =<<)) $ bouncing $ proc (oi, bs) -> do
   follow <- onMail @BallAction -< oi
+  g <- global -< ()
 
   returnA -<
     (
       ( mempty
-          { oo_output = drawBall oi bs
+          { oo_output = drawBall g bs
           }
       , bs
           & #bs_vel +~ ballGravity ^* i_dt (oi_input oi)
@@ -156,6 +158,7 @@ doPickup sf = proc i@(oi, bs) -> do
   spawn <- now () -< ()
   pickup <- onMail @PickedUp -< oi
   (oo, bs') <- sf -< i
+  g <- global -< ()
   returnA -<
     ( oo <> mempty
         { oo_commands = on pickup $ const $ pure Die
@@ -164,7 +167,7 @@ doPickup sf = proc i@(oi, bs) -> do
                 (has #_Player)
                 PickMeUp
                 (ballCapsule $ bs_pos bs)
-                (oi_everyone oi)
+                (g_everyone g)
             , on spawn $ const $ send Camera RefocusOnMe
             ]
         }

@@ -3,36 +3,41 @@ module Jam3Serious.Router where
 import Jam3Serious.Prelude
 import Data.Map.Strict qualified as M
 import Data.Map.Monoidal.Strict qualified as MM
+import FRP.Yampa qualified as Y
+import Data.Coerce
 
 
 router
     :: ObjectMap Object
-    -> SF Input Output
-router objs0 = loopPre mempty $
+    -> Y.SF Input Output
+router objs0 = Y.loopPre mempty $
   router' objs0 >>> arr (foldMap (oo_output . fst) &&& fmap snd)
 
 
 router'
     :: ObjectMap Object
-    -> SF (Input, ObjectMap ObjState)
+    -> Y.SF (Input, ObjectMap ObjState)
           (ObjectMap (ObjOutput, ObjState))
 router' objs0 =
-  pSwitch @ObjectMap
-          @(Input, ObjectMap ObjState )
-          @(ObjInput )
-          @(ObjOutput , ObjState)
+  Y.pSwitch @ObjectMap
+          @(Input, ObjectMap ObjState)
+          @(ObjInput, Global)
+          @(ObjOutput, ObjState)
           @(ObjectMap Object -> ObjectMap Object)
-    (\(i, outlast) om@(ObjectMap objs msgs) -> om
-      { om_objects = flip M.mapWithKey objs $ \name sf ->
-          (, sf) $ ObjInput
-            { oi_input = i
-            , oi_inbox = MM.findWithDefault mempty name msgs
-            , oi_me = name
-            , oi_everyone = om_objects outlast
-            }
-      }
+    (\(i, outlast) om@(ObjectMap objs msgs) ->
+      let g = Global (i_dt i) (om_objects outlast) in
+      fmap (first (, g)) $
+      om
+        { om_objects = flip M.mapWithKey objs $ \name sf ->
+            (, sf) $ ObjInput
+              { oi_input = i
+              , oi_inbox = MM.findWithDefault mempty name msgs
+              , oi_me = name
+              -- , oi_everyone = om_objects outlast
+              }
+        }
     )
-    objs0
+    (coerce objs0)
     ( ( arr
         $ Event
         . appEndo
@@ -41,9 +46,9 @@ router' objs0 =
         . om_objects
         . fmap fst
         . snd
-      ) >>> iPre NoEvent
+      ) >>> Y.iPre NoEvent
     )
-    (\om f -> router' $ f $ om { om_messages = mempty })
+    (\om f -> router' $ f $ coerce $ om { om_messages = mempty })
 
 
 
