@@ -17,7 +17,7 @@ import SDL.Primitive (fillPie, fillCircle)
 
 
 onPress :: Num a => Scancode -> a -> Input -> a
-onPress field a = flip i_keyboard field >>> arr (bool 0 a)
+onPress field a = flip (checkKeyboard . i_keyboard) field >>> arr (bool 0 a)
 
 
 arrows :: Num a => Input -> V2 a
@@ -42,15 +42,15 @@ fallingEdge = edgeBy (\x y -> bool Nothing (Just ()) $ x && not y) True
 
 inputToController :: SF ObjInput Controller
 inputToController = proc (oi_input -> i) -> do
-  jump <- edge -< i_keyboard i ScancodeSpace
-  shoot <- fallingEdge -< i_keyboard i ScancodeSpace
-  pass <- edge -< i_keyboard i ScancodeF
+  jump <- edge -< (checkKeyboard . i_keyboard) i ScancodeSpace
+  shoot <- fallingEdge -< (checkKeyboard . i_keyboard) i ScancodeSpace
+  pass <- edge -< (checkKeyboard . i_keyboard) i ScancodeF
   returnA -< Controller
     { c_dir = arrows i
     , c_jump = jump
     , c_shoot = shoot
     , c_pass = pass
-    , c_run = i_keyboard i ScancodeLShift
+    , c_run = (checkKeyboard . i_keyboard) i ScancodeLShift
     }
 
 data PlayerState = PlayerState

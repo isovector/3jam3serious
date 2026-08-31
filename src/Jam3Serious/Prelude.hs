@@ -32,15 +32,15 @@ import SDL.Input.Keyboard.Codes as X
 
 
 mousePos :: SF Input (V2 Int)
-mousePos = arr $ unP . i_mousepos
+mousePos = arr $ unP . m_mousepos . i_mouse
 
 
 mouseBtn :: MouseButton -> SF Input Bool
-mouseBtn = arr . flip i_mouse
+mouseBtn = arr . flip (m_mouse . i_mouse)
 
 
 keyboard :: Scancode -> SF Input Bool
-keyboard = arr . flip i_keyboard
+keyboard = arr . flip (checkKeyboard . i_keyboard)
 
 
 keypress :: Scancode -> SF Input (Event ())

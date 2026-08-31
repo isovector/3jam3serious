@@ -68,10 +68,20 @@ data Global = Global
 
 type SF = SFG Global
 
+newtype Keyboard = Keyboard
+  { checkKeyboard :: SDL.Scancode -> Bool
+  }
+  deriving stock Generic
+
+data Mouse = Mouse
+  { m_mouse :: SDL.MouseButton -> Bool
+  , m_mousepos :: !(SDL.Point SDL.V2 Int)
+  }
+  deriving stock Generic
+
 data Input = Input
-  { i_keyboard :: SDL.Scancode -> Bool
-  , i_mouse :: SDL.MouseButton -> Bool
-  , i_mousepos :: SDL.Point SDL.V2 Int
+  { i_keyboard :: !Keyboard
+  , i_mouse :: !Mouse
   , i_dt :: !DTime
   }
   deriving stock Generic

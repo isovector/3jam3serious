@@ -50,9 +50,8 @@ sampleInput dt = do
   SDL.P pos   <- SDL.getAbsoluteMouseLocation
   let pos' = SDL.P (fmap fromIntegral pos)
   pure Input
-    { i_keyboard = kbState
-    , i_mouse    = mbState
-    , i_mousepos = pos'
+    { i_keyboard = Keyboard kbState
+    , i_mouse    = Mouse mbState pos'
     , i_dt       = dt
     }
 
