@@ -52,6 +52,9 @@ now = coerce Y.now
 derivative :: (Fractional s, Y.VectorSpace a s) => SFG g a a
 derivative = SFG $ arr fst >>> Y.derivative
 
+integral :: (Fractional s, Y.VectorSpace a s) => SFG g a a
+integral = SFG $ arr fst >>> Y.integral
+
 time :: SFG g a Time
 time = coerce Y.time
 
@@ -60,6 +63,9 @@ delay t a = SFG $ arr fst >>> Y.delay t a
 
 delayEvent :: Time -> SFG g (Event a) (Event a)
 delayEvent t = SFG $ arr fst >>> Y.delayEvent t
+
+snap :: SFG g a (Event a)
+snap = SFG $ arr fst >>> Y.snap
 
 hold :: a -> SFG g (Event a) a
 hold a = SFG $ arr fst >>> Y.hold a

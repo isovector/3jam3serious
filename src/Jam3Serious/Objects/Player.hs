@@ -75,8 +75,7 @@ teamColor _ = V4 0 0 0 255
 
 
 data PlayerAction
-  = WalkTo (V2 Double)
-  | Jump
+  = Jump
   -- | ShovedFrom (V2 Double)
   deriving stock (Eq, Ord, Show)
 
@@ -96,7 +95,6 @@ getState f = swont $ proc i@(_, _, s) -> do
 player :: SF (ObjInput, PlayerState) Controller -> Obj PlayerState
 player getCtrls = wrapPlayer getCtrls $ foreverSwont $ do
   swont runPlayer >>= \case
-   WalkTo goal -> swont $ gotoPlayer goal
    Jump -> do
      p <- getState $ arr $ ps_pos . view _3
      dir <- getState $ arr $ c_dir  . view _1
@@ -108,21 +106,6 @@ player getCtrls = wrapPlayer getCtrls $ foreverSwont $ do
       , p + V3 0 0 (2 * jumpHeight) + vel * 0.5
       , p + vel
       ]
-
-
-gotoPlayer :: V2 Double -> SF (Controller, ObjInput, PlayerState) ((ObjOutput, PlayerState), Event ())
-gotoPlayer goal = proc (_, oi, ps) -> do
-  let pos = ps_pos ps ^. _xy
-  let dist = distance pos goal
-  arrived <- edge -< dist <= 0.01
-  rendered <- renderPlayer -< (OnGround, oi, ps)
-  returnA -<
-    ( ( mempty { oo_output = rendered }
-      , ps & #ps_pos ._xy +~ normalize (goal - pos) ^* min dist (walkSpeed * i_dt (oi_input oi))
-      )
-    , arrived
-    )
-
 
 
 motionPlayer :: Time -> Bezier Double (V3 Double) -> SF (Controller, ObjInput, PlayerState) ((ObjOutput, PlayerState), Event ())
@@ -150,6 +133,20 @@ onceUntil = proc (ea, eclear) -> do
   returnA -< ea'
 
 
+doCollision :: SF (Name, V3 Double) (V3 Double)
+doCollision = proc (me, here) -> do
+  g <- global -< ()
+  dpos <- integral -< normalize $ set _z 0 $ sum $ do
+    (who@Player{}, o) <- M.toList $ g_everyone g
+    guard $ who /= me
+    Just cap <- pure $ os_collision o
+    Just pos <- pure $ os_pos o
+    guard $ capsuleInCapsule (playerCapsule here) cap
+    let dist = set _z 0 $ here - pos
+    pure $ normalize dist
+  returnA -< dpos
+
+
 wrapPlayer
     :: SF (ObjInput, PlayerState) Controller
     -> SF (Controller, ObjInput, PlayerState) (ObjOutput, PlayerState)
@@ -167,14 +164,14 @@ wrapPlayer getCtrls sf = proc (oi, ps) -> do
   pickup <- onceUntil -< (couldPickup, afterwards)
   g <- global -< ()
 
-  let collisions = (^* i_dt (oi_input oi)) $ normalize $ set _z 0 $ sum $ do
-        (who@Player{}, o) <- M.toList $ g_everyone g
-        guard $ who /= oi_me oi
-        Just cap <- pure $ os_collision o
-        Just pos <- pure $ os_pos o
-        guard $ capsuleInCapsule (playerCapsule $ ps_pos ps) cap
-        let dist = set _z 0 $ ps_pos ps - pos
-        pure $ normalize dist
+  integral -< normalize $ set _z 0 $ sum $ do
+    (who@Player{}, o) <- M.toList $ g_everyone g
+    guard $ who /= oi_me oi
+    Just cap <- pure $ os_collision o
+    Just pos <- pure $ os_pos o
+    guard $ capsuleInCapsule (playerCapsule $ ps_pos ps) cap
+    let dist = set _z 0 $ ps_pos ps - pos
+    pure $ normalize dist
 
   returnA -<
     ( ( oo <> mempty
@@ -201,7 +198,6 @@ wrapPlayer getCtrls sf = proc (oi, ps) -> do
                 , on pass   (const $ Endo $ const False)
                 , on shoot  (const $ Endo $ const False)
                 ])
-        & #ps_pos +~ collisions
       )
     )
 
@@ -241,17 +237,22 @@ behindController offset = proc (oi, ps) -> do
     , c_run = running
     }
 
+keep :: SF a a
+keep = hold (error "keep") <<< snap
 
 runPlayer :: SF (Controller, ObjInput, PlayerState) ((ObjOutput, PlayerState), Event PlayerAction)
 runPlayer = proc (ctrl, oi, ps) -> do
   rendered <- renderPlayer -< (OnGround, oi, ps)
+  pos0 <- keep -< ps_pos ps
+  dpos <- integral -< (0 & _xy .~ c_dir ctrl) ^* bool walkSpeed runSpeed (c_run ctrl)
+  cpos <- doCollision -< (oi_me oi, ps_pos ps)
 
   returnA -< (, asum [ Jump <$ c_jump ctrl ]) $
     ( mempty
         { oo_output = rendered
         }
     , ps
-        & #ps_pos +~ (0 & _xy .~ c_dir ctrl) ^* (bool walkSpeed runSpeed (c_run ctrl) * i_dt (oi_input oi))
+        & #ps_pos .~ pos0 + dpos + cpos
     )
 
 
