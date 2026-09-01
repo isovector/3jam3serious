@@ -79,3 +79,19 @@ traceEvent NoEvent = NoEvent
 friends :: (Name -> ObjState -> Maybe b) -> SF () [b]
 friends f = global >>> arr (mapMaybe (uncurry f) . M.toList . g_everyone)
 
+friend :: (Name -> ObjState -> Maybe b) -> SF () (Maybe b)
+friend f = friends f >>> arr listToMaybe
+
+
+onceUntil :: SF (Event a, Event clear) (Event a)
+onceUntil = proc (ea, eclear) -> do
+  rec
+    let ea' = gate ea canSend
+    canSend <- dHold True -< asum [True <$ eclear, False <$ ea']
+  returnA -< ea'
+
+onlyEvery :: DTime -> SF (Event a) (Event a)
+onlyEvery dt = proc ev -> do
+  clear <- delay dt NoEvent -< ev
+  onceUntil -< (ev, clear)
+

@@ -6,6 +6,7 @@ import Data.Bezier
 import Data.List (sortOn)
 import Data.Map qualified as M
 import Data.Ord (clamp)
+import Jam3Serious.Collisions
 import Jam3Serious.Drawing
 import Jam3Serious.Geometry
 import Jam3Serious.Mail
@@ -66,9 +67,6 @@ instance ToObjState PlayerState where
     , os_collision = Just $ playerCapsule $ ps_pos ps
     }
 
-playerCapsule :: V3 Double -> Capsule Double
-playerCapsule = Capsule 2 0.1 0.25
-
 teamColor :: Name -> V4 Word8
 teamColor (Player T1 _) = V4 255 0 0 255
 teamColor (Player T2 _) = V4 0 0 255 255
@@ -127,15 +125,7 @@ motionPlayer dur bez = proc (_, oi, ps) -> do
 
 
 jitter :: SF () (V3 Double)
-jitter = fmap (\xy -> 0 & _xy .~ xy) $ noiseR (-0.5, 0.5) (mkStdGen 0)
-
-
-onceUntil :: SF (Event a, Event clear) (Event a)
-onceUntil = proc (ea, eclear) -> do
-  rec
-    let ea' = gate ea canSend
-    canSend <- dHold True -< asum [True <$ eclear, False <$ ea']
-  returnA -< ea'
+jitter = fmap (\xy -> 0 & _xy .~ xy) $ noiseR (0, 0) (mkStdGen 0)
 
 
 doCollision :: SF (Name, V3 Double) (V3 Double)

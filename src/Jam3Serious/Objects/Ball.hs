@@ -11,6 +11,7 @@ import Jam3Serious.Geometry
 import Jam3Serious.Mail
 import Jam3Serious.Objects.Court
 import Jam3Serious.Prelude
+import Jam3Serious.Collisions
 
 
 getBall :: Global -> Maybe (V3 Double)
@@ -40,10 +41,6 @@ data PickMeUp = PickMeUp
 
 data PickedUp = PickedUp
   deriving Show
-
-
-ballCapsule :: V3 Double -> Capsule Double
-ballCapsule = Capsule 0 0 0.24
 
 
 ballGravity :: V3 Double

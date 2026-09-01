@@ -1,9 +1,12 @@
 module Jam3Serious.Objects.Basket where
 
 import Data.Map qualified as M
-import Jam3Serious.Prelude
+import Jam3Serious.Collisions
 import Jam3Serious.Drawing
+import Jam3Serious.Geometry
 import Jam3Serious.Objects.Camera
+import Jam3Serious.Prelude
+import Jam3Serious.Mail
 import SDL.Primitive
 
 
@@ -27,6 +30,19 @@ basket :: V3 Double -> Obj (V3 Double)
 basket normal = proc (_, pos) -> do
   let bb = basketRect normal $ pos - normal * 0.5
   cam <- getCamera -< ()
+  mball <- friend (\n o -> os_pos =<< bool Nothing (Just o) (n == Ball)) -< ()
+  ball_vel <- derivative -< fromMaybe 0 mball
+
+  let maybe_goal =
+        maybeToEvent $ do
+          ball <- mball
+          case pointInCapsule (pos - V3 0 0 0.1) (ballCapsule ball) && dot (V3 0 0 (-1)) ball_vel > 0 of
+            True -> pure ()
+            False -> Nothing
+
+  goal <- onlyEvery 2 -< maybe_goal
+
+
   returnA -<
     ( mempty
         { oo_output =
@@ -36,6 +52,7 @@ basket normal = proc (_, pos) -> do
                   ellipse r
                     (fmap round $ screenPos $ toScreen cam pos) 40 10 $ V4 255 0 0 255
               ]
+        , oo_outbox = on goal $ send Ball
         }
     , pos
     )
