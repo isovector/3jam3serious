@@ -20,7 +20,7 @@ import Data.Map.Monoidal.Strict (MonoidalMap)
 import Data.Map.Monoidal.Strict qualified as MM
 import Data.Monoid
 import Data.Profunctor
-import FRP.Yampa (Event(..), DTime, VectorSpace, mergeBy, noEvent)
+import FRP.Yampa (Event(..), VectorSpace, mergeBy, noEvent)
 import Linear.Vector
 import GHC.Generics (Generic, Generic1, Generically(..), Generically1(..))
 import SDL (V2(..), V3(..), V4(..))

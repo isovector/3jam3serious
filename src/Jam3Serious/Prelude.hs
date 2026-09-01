@@ -19,7 +19,7 @@ import Data.Maybe as X
 import Data.Monoid as X
 import Data.Set as X (Set)
 import Data.Word as X
-import FRP.Yampa as X (Event(..), noEvent, Time, maybeToEvent)
+import FRP.Yampa as X (Event(..), noEvent, maybeToEvent)
 import GHC.Generics as X (Generic, Generically(..))
 import Jam3Serious.Types as X
 import Linear.Metric as X

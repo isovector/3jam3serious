@@ -6,8 +6,19 @@ import Linear.Projection
 import Linear.V2
 import Linear.V3
 import Linear.V4
-import Jam3Serious.Prelude hiding (identity)
+import Jam3Serious.Prelude
 import Jam3Serious.Mail
+
+newtype CamPos = CamPos
+  { getCamPos :: V3 Double
+  }
+  deriving stock (Eq, Ord, Show)
+
+
+getCamera :: SF a CamPos
+getCamera = global >>> arr (\g ->
+  CamPos $ fromMaybe 0 $ os_pos =<< M.lookup Camera (g_everyone g))
+
 
 data CameraState = CameraState
   { cs_pos :: V3 Double
@@ -38,7 +49,7 @@ camera = proc (oi, cs) -> do
     , cs
         & #cs_focus %~ appEndo (on refocus $ Endo . const . from)
         & #cs_pos %~ \pos ->
-          case qd (screenPos $ toScreen pos focus) (screenPos $ toScreen pos pos) > cs_deadzone cs of
+          case qd (screenPos $ toScreen (CamPos pos) focus) (screenPos $ toScreen (CamPos pos) pos) > cs_deadzone cs of
             False -> pos
             True -> pos + min diff (cs_speed cs * i_dt (oi_input oi)) *^ normalize (focus - pos)
 
@@ -59,8 +70,8 @@ projection =
     35
 
 
-toScreen :: V3 Double -> V3 Double -> (V2 Double, Double, Double)
-toScreen camPos (V3 wx wy wz) =
+toScreen :: CamPos -> V3 Double -> (V2 Double, Double, Double)
+toScreen (CamPos camPos) (V3 wx wy wz) =
     ( V2 ( sx * windowWidth  / (2 * sw) + windowWidth / 2)
          (-sy * windowHeight / (2 * sw) + windowHeight / 2)
     -- Perspective size factor, normalized so that 0 is at the horizon
@@ -86,7 +97,7 @@ screenPos :: (V2 Double, Double, Double) -> V2 Double
 screenPos (p, _, _) = p
 
 
-toScreenNormalized :: V3 Double -> V3 Double -> V2 Double
+toScreenNormalized :: CamPos -> V3 Double -> V2 Double
 toScreenNormalized cam
   = (* V2 (2 / windowWidth) (2 / windowHeight))
   . subtract (V2 (windowWidth / 2) (windowHeight / 2))

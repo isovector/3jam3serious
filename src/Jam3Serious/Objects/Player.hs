@@ -206,7 +206,7 @@ playerController :: SF (ObjInput, PlayerState) Controller
 playerController = proc (oi, _) -> inputToController -< oi
 
 stupidController :: SF (ObjInput, PlayerState) Controller
-stupidController = proc (_, ps) -> do
+stupidController = proc _ -> do
   returnA -< Controller
     { c_dir = 0
     , c_jump = NoEvent
@@ -216,10 +216,10 @@ stupidController = proc (_, ps) -> do
     }
 
 behindController :: V3 Double -> SF (ObjInput, PlayerState) Controller
-behindController offset = proc (oi, ps) -> do
+behindController offset = proc (_, ps) -> do
   g <- global -< ()
+  CamPos cam <- getCamera -< ()
   let ballPos = getBall g
-  let camPos = getCamera g
   recvBall <- edge -< ps_hasBall ps
   doJump <- delay 1 NoEvent -< recvBall
   doShoot <- delay 0.5 NoEvent -< doJump
@@ -229,7 +229,7 @@ behindController offset = proc (oi, ps) -> do
     { c_dir = normalize $ view _xy $
       (case ballPos of
           Just x -> x
-          Nothing -> bool (camPos + offset) 0 (ps_hasBall ps)
+          Nothing -> bool (cam + offset) 0 (ps_hasBall ps)
       ) - ps_pos ps
     , c_jump = doJump
     , c_shoot = doShoot
@@ -282,10 +282,10 @@ drunAnim = Anim "drun" 0.09
 
 renderPlayer :: SF (GroundState, ObjInput, PlayerState) Output
 renderPlayer = proc (gs, oi, ps) -> do
-  g <- global -< ()
+  cam <- getCamera -< ()
   old <- iPre 0 -< ps_pos ps ^. _x
   balldir <- hold 1 <<< arr filterZero <<< onChange -< signum $ ps_pos ps ^. _x - old
-  let spos@(V2 scx scy) = toScreenNormalized (getCamera g) $ ps_pos ps
+  let spos@(V2 scx scy) = toScreenNormalized cam $ ps_pos ps
       on_screen = and
         [ -deadzone <= scx
         , scx <= deadzone
@@ -302,18 +302,18 @@ renderPlayer = proc (gs, oi, ps) -> do
         <- animate gfx_player
         -< bool dstandAnim drunAnim $ ps_hasBall ps
       returnA -< mconcat
-        [ drawCapsule g
+        [ drawCapsule cam
             (playerCapsule $ ps_pos ps)
             color
             depth
         , flip (bool mempty) (ps_hasBall ps) $
-            drawCapsule g
+            drawCapsule cam
               (ballCapsule $ (ps_pos ps + V3 (balldir * ballPosX) 0 0) & _z +~ bool shootHeight ballZ (gs == OnGround))
               (V4 255 128 0 255)
               depth
         , drawAnimation
             anim
-            g
+            cam
             (ps_pos ps)
             (V2 (balldir < 0) False)
             depth

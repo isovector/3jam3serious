@@ -1,13 +1,16 @@
 {-# LANGUAGE ViewPatterns #-}
 
-module Jam3Serious.Drawing where
+module Jam3Serious.Drawing
+  ( module Jam3Serious.Drawing
+  , CamPos(..)
+  , getCamera
+  ) where
 
 import Control.Arrow
 import Control.Lens
 import Data.Atlas
 import Data.Int
 import Data.Map.Strict qualified as M
-import Data.Maybe (fromMaybe)
 import Data.Word
 import FRP.SFGlobal
 import GHC.Exts (fromList)
@@ -19,15 +22,9 @@ import SDL qualified as SDL
 import SDL.Primitive
 
 
-getCamera :: Global -> V3 Double
-getCamera g =
-  fromMaybe 0 $ os_pos =<< M.lookup Camera (g_everyone g)
-
-
-drawCapsule :: Global -> Capsule Double -> V4 Word8 -> DrawDepth -> Output
-drawCapsule oi (Capsule t b r xyz) color = raw $ \renderer _ -> do
-  let cam = getCamera oi
-      (fmap round -> top, _, st) = toScreen cam $ xyz + V3 0 0 t
+drawCapsule :: CamPos -> Capsule Double -> V4 Word8 -> DrawDepth -> Output
+drawCapsule cam (Capsule t b r xyz) color = raw $ \renderer _ -> do
+  let (fmap round -> top, _, st) = toScreen cam $ xyz + V3 0 0 t
       (fmap round -> bot, _, sb) = toScreen cam $ xyz - V3 0 0 b
       (fmap round -> flr, _, sf) = toScreen cam $ xyz & _z .~ 0
       rt = round $ st * r
@@ -41,10 +38,9 @@ drawCapsule oi (Capsule t b r xyz) color = raw $ \renderer _ -> do
   horizontalLine renderer bot rb color
 
 
-billboard :: Global -> Rect3 Double -> V4 Word8 -> DrawDepth -> Output
-billboard oi r color = raw $ \renderer _ -> do
-  let cam = getCamera oi
-      V4 tl tr br bl = fmap (screenPos . toScreen cam) $ rectCorners r
+billboard :: CamPos -> Rect3 Double -> V4 Word8 -> DrawDepth -> Output
+billboard cam r color = raw $ \renderer _ -> do
+  let V4 tl tr br bl = fmap (screenPos . toScreen cam) $ rectCorners r
       poly = fmap (fmap $ round @_ @Int16) [tl, tr, br, bl]
       c = fmap round $ screenPos $ toScreen cam $ r3_center r
       c' = fmap round $ screenPos $ toScreen cam $ r3_center r + rectNormal r
@@ -77,14 +73,13 @@ animate mkAtlas = proc anim -> do
 
 drawAnimation
     :: Animation
-    -> Global
+    -> CamPos
     -> V3 Double
     -> V2 Bool
     -> DrawDepth
     -> Output
-drawAnimation (Animation mkAtlas key frameno) oi pos flips = raw $ \renderer gfx -> do
+drawAnimation (Animation mkAtlas key frameno) cam pos flips = raw $ \renderer gfx -> do
     let atlas = mkAtlas gfx
-        cam = getCamera oi
         (fmap round -> spos, sz, _) = toScreen cam pos
         frames = getAtlas atlas M.! key
         (rect, origin) = frames !! (mod frameno $ length frames)

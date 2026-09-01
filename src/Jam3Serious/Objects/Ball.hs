@@ -53,14 +53,14 @@ ballElasticity :: Double
 ballElasticity = 0.8
 
 motionBall :: Time -> Bezier Double (V3 Double) -> ObjE BallState ()
-motionBall dur bez = fmap (fmap void) $ bouncing $ proc (oi, bs) -> do
+motionBall dur bez = fmap (fmap void) $ bouncing $ proc (_, bs) -> do
   t <- time -< ()
   done <- after dur () -< ()
   vel <- derivative -< bs_pos bs
-  g <- global -< ()
+  cam <- getCamera -< ()
 
   returnA -<
-    ( ( mempty { oo_output = drawBall g bs }
+    ( ( mempty { oo_output = drawBall cam bs }
       , bs
           & #bs_pos .~ runBezier bez (t / dur)
           & #bs_vel .~ vel
@@ -112,9 +112,9 @@ midControlOffset, shootControlOffset :: V3 Double
 midControlOffset = V3 0 0 4
 shootControlOffset = V3 0 0 3
 
-drawBall :: Global -> BallState -> Output
-drawBall g bs = mconcat
-  [ drawCapsule g
+drawBall :: CamPos -> BallState -> Output
+drawBall cam bs = mconcat
+  [ drawCapsule cam
       (ballCapsule $ bs_pos bs)
       (V4 255 128 0 255)
       (DDDepth $ view _y $ bs_pos bs)
@@ -139,12 +139,12 @@ bouncing sf = proc i -> do
 physicsBall :: ObjE BallState BallAction
 physicsBall = fmap (fmap $ (maybe noEvent pure =<<)) $ bouncing $ proc (oi, bs) -> do
   follow <- onMail @BallAction -< oi
-  g <- global -< ()
+  cam <- getCamera -< ()
 
   returnA -<
     (
       ( mempty
-          { oo_output = drawBall g bs
+          { oo_output = drawBall cam bs
           }
       , bs
           & #bs_vel +~ ballGravity ^* i_dt (oi_input oi)
