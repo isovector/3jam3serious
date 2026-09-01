@@ -38,6 +38,7 @@ dependencies:
 - JuicyPixels
 - vector
 - arrows
+- random
 
 ghc-options:
 - -Wall

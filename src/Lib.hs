@@ -10,6 +10,7 @@ import Jam3Serious.Objects.Basket
 import Jam3Serious.Objects.Camera
 import Jam3Serious.Objects.Court
 import Jam3Serious.Objects.Player
+import Jam3Serious.Objects.Rim
 import Jam3Serious.Prelude
 import Jam3Serious.Router
 import Jam3Serious.Yampa
@@ -44,7 +45,7 @@ appSF = proc i -> do
   objs
     <- router
         ( flip ObjectMap mempty
-        $ M.fromList
+        $ M.fromList $
             [ (Player T1 $ PlayerNum 0, object (PlayerState (V3 (-1) 0 0) False) $ player playerController)
             , (Court, object () court)
             , (Player T2 $ PlayerNum 1, object (PlayerState (V3 1 0 0) False) $ player stupidController)
@@ -53,11 +54,15 @@ appSF = proc i -> do
             , (Player T2 $ PlayerNum 2, object (PlayerState (V3 1.2 0.2 0) False) $ player stupidController)
             , (Player T2 $ PlayerNum 4, object (PlayerState (V3 1.2 0 0) False) $ player stupidController)
             , (Player T2 $ PlayerNum 5, object (PlayerState (V3 1.2 (-0.2) 0) False) $ player stupidController)
-            , (Ball, object (ballState (V3 0 1 2) 0) ball)
+            , (Ball, object (ballState (V3 (-8) 1 2) 0) ball)
             , (Basket T1, object (V3 (-12) 0 4) $ basket $ V3 1 0 0 )
             , (Basket T2, object (V3 12 0 4) $ basket $ V3 (-1) 0 0)
-            , (Camera, object (CameraState 0 (50 * 50) 20 Ball) camera)
-            ]
+            , (Camera, object (CameraState (V3 (-8) 0 0) (50 * 50) 20 Ball) camera)
+            ] <> do
+              (t, o) <- zip [T1, T2] [V3 (-12) 0 4, V3 12 0 4]
+              (i, r) <- zip [0..] $ mkRim 8 o
+              pure (Rim t i, object r rim)
+
         ) -< i
 
   returnA -< bg <> objs

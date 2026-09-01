@@ -139,6 +139,7 @@ data Name
   | Ball
   | Basket !Team
   | Camera
+  | Rim !Team !Int
   deriving stock (Eq, Ord, Show, Generic)
 
 data Mail a = Mail
@@ -168,6 +169,13 @@ data ObjState = ObjState
 
 class ToObjState a where
   toObjState :: a -> ObjState
+
+
+instance ToObjState (V3 Double) where
+  toObjState p = ObjState
+    { os_pos = Just p
+    , os_collision = Nothing
+    }
 
 data OriginRect aff = OriginRect
   { orect_size   :: !(V2 aff)

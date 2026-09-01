@@ -127,9 +127,19 @@ data BallAction
   deriving stock (Eq, Ord, Show)
 
 bouncing :: ObjE BallState e -> ObjE BallState (Maybe e)
-bouncing sf = proc i -> do
-  bounce <- foldMap (\r -> fmap (fmap Endo) $ rect3Bounce r) $ fmap fst courtGeom -< bs_pos $ snd i
-  oo <- sf -< i
+bouncing sf = proc (oi, bs) -> do
+  let pos = bs_pos bs
+  rims <- friends (\n o -> os_pos =<< bool Nothing (Just o) (has #_Rim n)) -< ()
+  let rimBounce = maybeToEvent $ getFirst $
+        flip foldMap rims $ \rim ->
+          case pointInCapsule rim (ballCapsule pos) && dot (bs_vel bs) (rim - pos) > 0 of
+            True -> pure $ Endo $ reflectAlong $ normalize $ rim - pos
+            False -> mempty
+
+  wallBounce <- foldMap (\r -> fmap (fmap Endo) $ rect3Bounce r) $ fmap fst courtGeom -< pos
+  let bounce = rimBounce <|> wallBounce
+
+  oo <- sf -< (oi, bs)
   returnA -<
     oo
       & _1 . _2 . #bs_vel %~ appEndo (on bounce $ \f -> f <> Endo (^* ballElasticity))

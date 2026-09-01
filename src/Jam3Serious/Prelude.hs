@@ -3,8 +3,6 @@ module Jam3Serious.Prelude
   , module Jam3Serious.Prelude
   ) where
 
-import FRP.SFGlobal as X
-import Debug.Trace as X (traceShowId)
 import Control.Applicative as X
 import Control.Arrow as X
 import Control.Lens as X ((+~), (<>~), (.~), (%~), (#), (&), view, set, over, (^.), (^..), Lens', Prism', Traversal', has, _1, _2, _3)
@@ -15,10 +13,13 @@ import Data.Dynamic as X (Dynamic, toDyn, fromDynamic, Typeable)
 import Data.Generics.Labels ()
 import Data.Map as X (Map)
 import Data.Map.Monoidal.Strict as X (MonoidalMap)
+import Data.Map.Strict qualified as M
 import Data.Maybe as X
 import Data.Monoid as X
 import Data.Set as X (Set)
 import Data.Word as X
+import Debug.Trace as X (trace, traceShowId)
+import FRP.SFGlobal as X
 import FRP.Yampa as X (Event(..), noEvent, maybeToEvent)
 import GHC.Generics as X (Generic, Generically(..))
 import Jam3Serious.Types as X
@@ -66,7 +67,15 @@ timeout t m = Swont $ cont $ \k ->
     ) k
 
 
+traceEventF :: Show b => (a -> b) -> Event a -> Event a
+traceEventF f (Event a) = trace (show $ f a) $ Event a
+traceEventF _ NoEvent = NoEvent
+
 traceEvent :: Show a => Event a -> Event a
 traceEvent (Event a) = traceShowId $ Event a
 traceEvent NoEvent = NoEvent
+
+
+friends :: (Name -> ObjState -> Maybe b) -> SF () [b]
+friends f = global >>> arr (mapMaybe (uncurry f) . M.toList . g_everyone)
 

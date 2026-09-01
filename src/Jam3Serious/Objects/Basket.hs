@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -Wno-orphans #-}
-
 module Jam3Serious.Objects.Basket where
 
 import Data.Map qualified as M
@@ -7,13 +5,6 @@ import Jam3Serious.Prelude
 import Jam3Serious.Drawing
 import Jam3Serious.Objects.Camera
 import SDL.Primitive
-
-
-instance ToObjState (V3 Double) where
-  toObjState p = ObjState
-    { os_pos = Just p
-    , os_collision = Nothing
-    }
 
 
 basketWidth, basketHeight :: Num a => a
@@ -54,4 +45,17 @@ netPos :: Global -> Team -> V3 Double
 netPos g t =
   fromMaybe (error $ "no net for team " <> show t) $
     os_pos =<< M.lookup (Basket t) (g_everyone g)
+
+
+netRadius :: Double
+netRadius = 0.450
+
+
+mkRim :: Int -> V3 Double -> [V3 Double]
+mkRim n o = do
+  let n_ = fromIntegral n
+  i <- fmap fromIntegral [0 .. n - 1]
+  let x = cos (2 * pi / n_ * i) * netRadius
+      y = sin (2 * pi / n_ * i) * netRadius
+  pure $ o + V3 x y 0
 

@@ -2,18 +2,19 @@
 
 module Jam3Serious.Objects.Player where
 
-import Jam3Serious.Geometry
 import Data.Bezier
 import Data.List (sortOn)
 import Data.Map qualified as M
+import Data.Ord (clamp)
 import Jam3Serious.Drawing
+import Jam3Serious.Geometry
 import Jam3Serious.Mail
 import Jam3Serious.Objects.Ball
 import Jam3Serious.Objects.Basket
 import Jam3Serious.Objects.Camera
 import Jam3Serious.Prelude
-import Data.Ord (clamp)
 import SDL.Primitive (fillPie, fillCircle)
+import System.Random (mkStdGen)
 
 
 onPress :: Num a => Scancode -> a -> Input -> a
@@ -125,6 +126,10 @@ motionPlayer dur bez = proc (_, oi, ps) -> do
     )
 
 
+jitter :: SF () (V3 Double)
+jitter = fmap (\xy -> 0 & _xy .~ xy) $ noiseR (-0.5, 0.5) (mkStdGen 0)
+
+
 onceUntil :: SF (Event a, Event clear) (Event a)
 onceUntil = proc (ea, eclear) -> do
   rec
@@ -154,10 +159,10 @@ wrapPlayer
 wrapPlayer getCtrls sf = proc (oi, ps) -> do
   ctrl <- getCtrls -< (oi, ps)
   (oo, ps') <- sf -< (ctrl, oi, ps)
-
+  accuracy <- jitter -< ()
 
   let pass = PassTo (V3 0 0 0) <$ gate (c_pass ctrl) (ps_hasBall ps)
-      shoot = ShootAt (V3 (-12) 0 4) <$ gate (c_shoot ctrl) (ps_hasBall ps)
+      shoot = ShootAt (V3 (-12) 0 4 + accuracy) <$ gate (c_shoot ctrl) (ps_hasBall ps)
 
   couldPickup <- onMail @PickMeUp -< oi
   afterwards <- delayEvent 0.5 -< pass <|> shoot

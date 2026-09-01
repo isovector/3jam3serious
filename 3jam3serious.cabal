@@ -36,6 +36,7 @@ library
       Jam3Serious.Objects.Camera
       Jam3Serious.Objects.Court
       Jam3Serious.Objects.Player
+      Jam3Serious.Objects.Rim
       Jam3Serious.Prelude
       Jam3Serious.Router
       Jam3Serious.Types
@@ -69,6 +70,7 @@ library
     , monoidal-containers
     , mtl
     , profunctors
+    , random
     , sdl2
     , sdl2-gfx
     , text
@@ -106,6 +108,7 @@ executable 3jam3serious-exe
     , monoidal-containers
     , mtl
     , profunctors
+    , random
     , sdl2
     , sdl2-gfx
     , text
@@ -149,6 +152,7 @@ test-suite tests
     , monoidal-containers
     , mtl
     , profunctors
+    , random
     , sdl2
     , sdl2-gfx
     , text

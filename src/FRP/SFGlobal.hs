@@ -79,3 +79,6 @@ loopPre c sfg = SFG $ Y.loopPre c (arr reassoc >>> runGlobal sfg)
 reassoc :: ((a, b), c) -> ((a, c), b)
 reassoc ((a, b), c) = ((a, c), b)
 
+noiseR :: (Y.RandomGen gen, Y.Random b) => (b, b) -> gen -> SFG g a b
+noiseR bs g = SFG $ Y.noiseR bs g
+

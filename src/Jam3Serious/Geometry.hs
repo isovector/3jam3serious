@@ -90,9 +90,15 @@ rect3V3Check r@(Rect3 c u v) p = do
 
 -- | Reflect a 'V3' off of a 'Rect3'.
 rect3Reflect :: (Floating a, Epsilon a) => Rect3 a -> V3 a -> V3 a
-rect3Reflect r d =  do
-  let n = rectNormal r
-  d - 2 * dot d n *^ n
+rect3Reflect = reflectAlong . rectNormal
+
+reflectAlong
+  :: Epsilon a
+  => V3 a
+  -- ^ normal
+  -> V3 a
+  -> V3 a
+reflectAlong n d = d - 2 * dot d n *^ n
 
 
 -- | Determine if a changing position ought to bounce off a static 'Rect3'.
