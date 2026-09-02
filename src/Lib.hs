@@ -1,5 +1,6 @@
 module Lib (main) where
 
+import Jam3Serious.Audio
 import Control.Exception (bracket, bracket_)
 import Data.Atlas
 import Data.Map qualified as M
@@ -9,13 +10,14 @@ import Jam3Serious.Objects.Ball
 import Jam3Serious.Objects.Basket
 import Jam3Serious.Objects.Camera
 import Jam3Serious.Objects.Court
+import Jam3Serious.Objects.Game
 import Jam3Serious.Objects.Player
 import Jam3Serious.Objects.Rim
-import Jam3Serious.Objects.Game
 import Jam3Serious.Prelude
 import Jam3Serious.Router
 import Jam3Serious.Yampa
-import qualified SDL
+import SDL qualified
+import Sound.ALUT qualified as ALUT
 
 
 windowTitle :: String
@@ -23,7 +25,9 @@ windowTitle = "3jam3serious"
 
 
 main :: IO ()
-main = bracket_ SDL.initializeAll SDL.quit $ do
+main
+  = ALUT.withProgNameAndArgs ALUT.runALUT $ \_ _ ->
+    bracket_ SDL.initializeAll SDL.quit $ do
   window <- SDL.createWindow
     (pack windowTitle)
     SDL.defaultWindow
@@ -32,18 +36,21 @@ main = bracket_ SDL.initializeAll SDL.quit $ do
           windowHeight
       }
   renderer <- SDL.createRenderer window (-1) SDL.defaultRenderer
+  audio <-
+    Soundbank
+      <$> loadAudio "res/3pts.wav"
   gfx <-
     Gfx
       <$> loadAtlas renderer "res/player.json"
       <*> loadAtlas renderer "res/numbers.json"
   bracket (pure (window, renderer))
           (\(w, r) -> SDL.destroyRenderer r >> SDL.destroyWindow w)
-          (\_      -> runSF renderer gfx appSF)
+          (\_      -> runSF renderer gfx audio appSF)
 
 
 appSF :: Y.SF Input Output
 appSF = proc i -> do
-  let bg = flip raw DDCourt $ \renderer _ -> do
+  let bg = flip raw DDCourt $ \renderer _ _ -> do
         SDL.rendererDrawColor renderer SDL.$= V4 100 149 237 255
         SDL.clear renderer
   objs

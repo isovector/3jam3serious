@@ -6,26 +6,28 @@ module Jam3Serious.Drawing
   , getCamera
   ) where
 
-import Data.Foldable
-import Foreign.C.Types (CInt)
 import Control.Arrow
 import Control.Lens
 import Data.Atlas
+import Data.Foldable
 import Data.Int
 import Data.Map.Strict qualified as M
 import Data.Word
 import FRP.SFGlobal
+import Foreign.C.Types (CInt)
 import GHC.Exts (fromList)
+import Jam3Serious.Audio
 import Jam3Serious.Geometry
 import Jam3Serious.Objects.Camera
 import Jam3Serious.Types
 import Linear.V4
 import SDL qualified as SDL
 import SDL.Primitive
+import Sound.ALUT qualified as ALUT
 
 
 drawCapsule :: CamPos -> Capsule Double -> V4 Word8 -> DrawDepth -> Output
-drawCapsule cam (Capsule t b r xyz) color = raw $ \renderer _ -> do
+drawCapsule cam (Capsule t b r xyz) color = raw $ \renderer _ _ -> do
   let (fmap round -> top, _, st) = toScreen cam $ xyz + V3 0 0 t
       (fmap round -> bot, _, sb) = toScreen cam $ xyz - V3 0 0 b
       (fmap round -> flr, _, sf) = toScreen cam $ xyz & _z .~ 0
@@ -41,7 +43,7 @@ drawCapsule cam (Capsule t b r xyz) color = raw $ \renderer _ -> do
 
 
 billboard :: CamPos -> Rect3 Double -> V4 Word8 -> DrawDepth -> Output
-billboard cam r color = raw $ \renderer _ -> do
+billboard cam r color = raw $ \renderer _ _ -> do
   let V4 tl tr br bl = fmap (screenPos . toScreen cam) $ rectCorners r
       poly = fmap (fmap $ round @_ @Int16) [tl, tr, br, bl]
       c = fmap round $ screenPos $ toScreen cam $ r3_center r
@@ -80,7 +82,7 @@ drawAnimation
     -> V2 Bool
     -> DrawDepth
     -> Output
-drawAnimation (Animation mkAtlas key frameno) cam pos flips = raw $ \renderer gfx -> do
+drawAnimation (Animation mkAtlas key frameno) cam pos flips = raw $ \renderer gfx _ -> do
     let atlas = mkAtlas gfx
         (fmap round -> spos, sz, _) = toScreen cam pos
         frames = getAtlas atlas M.! key
@@ -101,7 +103,7 @@ drawText
     -> Int
     -> Output
 drawText mkAtlas (V2 x y) (show -> n) =
-  flip raw DDGUI $ \renderer gfx -> do
+  flip raw DDGUI $ \renderer gfx _ -> do
     let atlas = mkAtlas gfx
         width = rectWidth $ fst $ (getAtlas atlas M.! "BigLED") !! 0
     for_ (zip [0..] n) $ \(i, d) -> do
@@ -125,4 +127,13 @@ setRectXY
     -> SDL.Rectangle a
 setRectXY xy dsz (SDL.Rectangle _ sz)
   = SDL.Rectangle (SDL.P xy) $ fmap (round . (* dsz) . fromIntegral) sz
+
+
+playSound
+  :: (Soundbank -> Source)
+  -> Output
+playSound f = flip raw DDGUI $ \_ _ audio -> do
+  let src = f audio
+  ALUT.stop [src]
+  ALUT.play [src]
 

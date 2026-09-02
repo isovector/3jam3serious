@@ -14,7 +14,7 @@ rim = proc (_, pos) -> do
   returnA -<
     ( mempty
         { oo_output =
-            flip raw (DDDepth $ view _y pos + 1) $ \r _ -> do
+            flip raw (DDDepth $ view _y pos + 1) $ \r _ _ -> do
               fillEllipse r
                 (fmap round $ screenPos $ toScreen cam pos) 2 2 $ V4 0 0 0 255
         }

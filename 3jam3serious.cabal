@@ -60,7 +60,8 @@ library
       StrictData
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints
   build-depends:
-      JuicyPixels
+      ALUT
+    , JuicyPixels
     , Yampa
     , aeson
     , arrows
@@ -98,6 +99,7 @@ executable 3jam3serious-exe
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       3jam3serious
+    , ALUT
     , JuicyPixels
     , Yampa
     , aeson
@@ -138,6 +140,7 @@ test-suite tests
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       3jam3serious
+    , ALUT
     , JuicyPixels
     , QuickCheck
     , Yampa

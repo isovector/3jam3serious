@@ -7,6 +7,7 @@ module Jam3Serious.Types
   , V4(..)
   ) where
 
+import Jam3Serious.Audio
 import FRP.SFGlobal
 import Data.Atlas
 import FRP.Yampa qualified as Y
@@ -93,17 +94,24 @@ data DrawDepth
   deriving stock (Eq, Ord, Show)
 
 newtype Output = Output
-  { runOutput :: MonoidalMap DrawDepth (SDL.Renderer -> Gfx -> IO ())
+  { runOutput :: MonoidalMap DrawDepth (SDL.Renderer -> Gfx -> Soundbank -> IO ())
   }
   deriving newtype (Semigroup, Monoid)
 
 
-raw :: (SDL.Renderer -> Gfx -> IO ()) -> DrawDepth -> Output
+raw
+    :: (SDL.Renderer -> Gfx -> Soundbank -> IO ())
+    -> DrawDepth
+    -> Output
 raw f dd = Output $ MM.singleton dd f
 
 data Gfx = Gfx
   { gfx_player :: Atlas
   , gfx_numbers :: Atlas
+  }
+
+data Soundbank = Soundbank
+  { sound_3pts :: Source
   }
 
 data ObjInput = ObjInput

@@ -39,6 +39,7 @@ dependencies:
 - vector
 - arrows
 - random
+- ALUT
 
 ghc-options:
 - -Wall

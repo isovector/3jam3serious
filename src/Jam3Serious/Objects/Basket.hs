@@ -49,7 +49,7 @@ basket points_for normal = proc (_, pos) -> do
         { oo_output =
             mconcat
               [ billboard cam bb (V4 128 128 0 255) (DDDepth $ view _y pos)
-              , flip raw (DDDepth $ view _y pos) $ \r _ -> do
+              , flip raw (DDDepth $ view _y pos) $ \r _ _ -> do
                   ellipse r
                     (fmap round $ screenPos $ toScreen cam pos) 40 10 $ V4 255 0 0 255
               ]

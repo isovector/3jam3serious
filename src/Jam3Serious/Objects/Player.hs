@@ -319,7 +319,7 @@ renderPlayer = proc (gs, oi, ps) -> do
             $ fmap (clamp (-in_screen_zone, in_screen_zone)) spos + 1
           dir = (atan2 scy scx * 180 / pi) + 180
       returnA -< mconcat
-        [ flip raw DDGUI $ \renderer _ -> do
+        [ flip raw DDGUI $ \renderer _ _ -> do
             fillPie
               renderer
               (fmap round $ screenpos + normalize spos * pie_offset)
