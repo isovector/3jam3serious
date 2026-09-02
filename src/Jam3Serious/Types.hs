@@ -103,6 +103,7 @@ raw f dd = Output $ MM.singleton dd f
 
 data Gfx = Gfx
   { gfx_player :: Atlas
+  , gfx_numbers :: Atlas
   }
 
 data ObjInput = ObjInput
@@ -140,6 +141,7 @@ data Name
   | Basket !Team
   | Camera
   | Rim !Team !Int
+  | Game
   deriving stock (Eq, Ord, Show, Generic)
 
 data Mail a = Mail

@@ -7,6 +7,7 @@ import Jam3Serious.Geometry
 import Jam3Serious.Objects.Camera
 import Jam3Serious.Prelude
 import Jam3Serious.Mail
+import Jam3Serious.Objects.Game
 import SDL.Primitive
 
 
@@ -26,8 +27,8 @@ basketRect normal pos = do
   Rect3 pos u v
 
 
-basket :: V3 Double -> Obj (V3 Double)
-basket normal = proc (_, pos) -> do
+basket :: Team -> V3 Double -> Obj (V3 Double)
+basket points_for normal = proc (_, pos) -> do
   let bb = basketRect normal $ pos - normal * 0.5
   cam <- getCamera -< ()
   mball <- friend (\n o -> os_pos =<< bool Nothing (Just o) (n == Ball)) -< ()
@@ -52,7 +53,7 @@ basket normal = proc (_, pos) -> do
                   ellipse r
                     (fmap round $ screenPos $ toScreen cam pos) 40 10 $ V4 255 0 0 255
               ]
-        , oo_outbox = on goal $ send Ball
+        , oo_outbox = on (Goal points_for <$ goal) $ send Game
         }
     , pos
     )

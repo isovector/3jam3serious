@@ -82,3 +82,5 @@ reassoc ((a, b), c) = ((a, c), b)
 noiseR :: (Y.RandomGen gen, Y.Random b) => (b, b) -> gen -> SFG g a b
 noiseR bs g = SFG $ Y.noiseR bs g
 
+accumHoldBy :: (b -> a -> b) -> b -> SFG g (Event a) b
+accumHoldBy f b = SFG $ arr fst >>> Y.accumHoldBy f b

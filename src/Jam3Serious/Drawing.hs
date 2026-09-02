@@ -6,6 +6,8 @@ module Jam3Serious.Drawing
   , getCamera
   ) where
 
+import Data.Foldable
+import Foreign.C.Types (CInt)
 import Control.Arrow
 import Control.Lens
 import Data.Atlas
@@ -91,6 +93,28 @@ drawAnimation (Animation mkAtlas key frameno) cam pos flips = raw $ \renderer gf
       0
       Nothing
       flips
+
+
+drawText
+    :: (Gfx -> Atlas)
+    -> V2 CInt
+    -> Int
+    -> Output
+drawText mkAtlas (V2 x y) (show -> n) =
+  flip raw DDGUI $ \renderer gfx -> do
+    let atlas = mkAtlas gfx
+        width = rectWidth $ fst $ (getAtlas atlas M.! "BigLED") !! 0
+    for_ (zip [0..] n) $ \(i, d) -> do
+      let rect = fst $ (getAtlas atlas M.! "BigLED") !! read [d]
+      SDL.copy
+        renderer
+        (atlasTexture atlas)
+        (Just rect)
+        (Just $ setRectXY (V2 (x + (width + 2) * i) y) 1 rect)
+
+
+rectWidth :: SDL.Rectangle a -> a
+rectWidth (SDL.Rectangle _ (V2 w _)) = w
 
 
 setRectXY
