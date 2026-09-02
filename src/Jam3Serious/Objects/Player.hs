@@ -31,9 +31,6 @@ arrows =
     , onPress ScancodeD $ V2 1    0
     ]
 
-fallingEdge :: SF Bool (Event ())
-fallingEdge = edgeBy (\x y -> bool Nothing (Just ()) $ x && not y) True
-
 inputToController :: SF ObjInput Controller
 inputToController = proc (oi_input -> i) -> do
   jump <- edge -< (checkKeyboard . i_keyboard) i ScancodeSpace
@@ -227,9 +224,6 @@ behindController offset = proc (_, ps) -> do
     , c_pass = NoEvent
     , c_run = running
     }
-
-keep :: SF a a
-keep = hold (error "keep") <<< snap
 
 runPlayer :: SF (Controller, ObjInput, PlayerState) ((ObjOutput, PlayerState), Event PlayerAction)
 runPlayer = proc (ctrl, oi, ps) -> do

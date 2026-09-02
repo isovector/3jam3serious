@@ -97,3 +97,9 @@ onlyEvery dt = proc ev -> do
   clear <- delay dt NoEvent -< ev
   onceUntil -< (ev, clear)
 
+fallingEdge :: SF Bool (Event ())
+fallingEdge = edgeBy (\x y -> bool Nothing (Just ()) $ x && not y) True
+
+keep :: SF a a
+keep = hold (error "keep") <<< snap
+
