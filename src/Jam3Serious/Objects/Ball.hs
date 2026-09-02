@@ -99,7 +99,7 @@ midControlOffset, shootControlOffset :: V3 Double
 midControlOffset = V3 0 0 4
 shootControlOffset = V3 0 0 3
 
-drawBall :: CamPos -> BallState -> Output
+drawBall :: ToScreen -> BallState -> Output
 drawBall cam bs = mconcat
   [ drawCapsule cam
       (ballCapsule $ bs_pos bs)

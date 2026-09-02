@@ -2,7 +2,7 @@
 
 module Jam3Serious.Drawing
   ( module Jam3Serious.Drawing
-  , CamPos(..)
+  , ToScreen(..)
   , getCamera
   ) where
 
@@ -26,7 +26,7 @@ import SDL.Primitive
 import Sound.ALUT qualified as ALUT
 
 
-drawCapsule :: CamPos -> Capsule Double -> V4 Word8 -> DrawDepth -> Output
+drawCapsule :: ToScreen -> Capsule Double -> V4 Word8 -> DrawDepth -> Output
 drawCapsule cam (Capsule t b r xyz) color = raw $ \renderer _ _ -> do
   let (fmap round -> top, _, st) = toScreen cam $ xyz + V3 0 0 t
       (fmap round -> bot, _, sb) = toScreen cam $ xyz - V3 0 0 b
@@ -42,7 +42,7 @@ drawCapsule cam (Capsule t b r xyz) color = raw $ \renderer _ _ -> do
   horizontalLine renderer bot rb color
 
 
-billboard :: CamPos -> Rect3 Double -> V4 Word8 -> DrawDepth -> Output
+billboard :: ToScreen -> Rect3 Double -> V4 Word8 -> DrawDepth -> Output
 billboard cam r color = raw $ \renderer _ _ -> do
   let V4 tl tr br bl = fmap (screenPos . toScreen cam) $ rectCorners r
       poly = fmap (fmap $ round @_ @Int16) [tl, tr, br, bl]
@@ -77,7 +77,7 @@ animate mkAtlas = proc anim -> do
 
 drawAnimation
     :: Animation
-    -> CamPos
+    -> ToScreen
     -> V3 Double
     -> V2 Bool
     -> DrawDepth
