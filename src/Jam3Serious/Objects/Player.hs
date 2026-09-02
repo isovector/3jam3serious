@@ -193,38 +193,6 @@ wrapPlayer getCtrls sf = proc (oi, ps) -> do
 playerController :: SF (ObjInput, PlayerState) Controller
 playerController = proc (oi, _) -> inputToController -< oi
 
-stupidController :: SF (ObjInput, PlayerState) Controller
-stupidController = proc _ -> do
-  returnA -< Controller
-    { c_dir = 0
-    , c_jump = NoEvent
-    , c_shoot = NoEvent
-    , c_pass = NoEvent
-    , c_run = False
-    }
-
-behindController :: V3 Double -> SF (ObjInput, PlayerState) Controller
-behindController offset = proc (_, ps) -> do
-  g <- global -< ()
-  CamPos cam <- getCamera -< ()
-  let ballPos = getBall g
-  recvBall <- edge -< ps_hasBall ps
-  doJump <- delay 1 NoEvent -< recvBall
-  doShoot <- delay 0.5 NoEvent -< doJump
-  running <- fmap ((0 >=) . sin . (* 2)) time -< ()
-
-  returnA -< Controller
-    { c_dir = normalize $ view _xy $
-      (case ballPos of
-          Just x -> x
-          Nothing -> bool (cam + offset) 0 (ps_hasBall ps)
-      ) - ps_pos ps
-    , c_jump = doJump
-    , c_shoot = doShoot
-    , c_pass = NoEvent
-    , c_run = running
-    }
-
 runPlayer :: SF (Controller, ObjInput, PlayerState) ((ObjOutput, PlayerState), Event PlayerAction)
 runPlayer = proc (ctrl, oi, ps) -> do
   rendered <- renderPlayer -< (OnGround, oi, ps)

@@ -70,16 +70,6 @@ getBallPos = arr $ \(_, bs) -> ((mempty, bs), pure $ bs_pos bs)
 
 ball :: Obj BallState
 ball = doPickup $ foreverSwont $ do
-  -- swont getBallPos >>= flip shootAt (V3 (-5) 0 4)
-  -- timeout 3 $ swont physicsBall
-  -- swont getBallPos >>= flip passTo (V3 (5) 0 4)
-  -- timeout 3 $ swont physicsBall
-  -- swont getBallPos >>= flip passTo (V3 (-5) 0 4)
-  -- timeout 3 $ swont physicsBall
-  -- swont getBallPos >>= flip shootAt (V3 (5) 0 4)
-  -- timeout 3 $ swont physicsBall
-
-
   e <- swont physicsBall
   pos <- swont getBallPos
   case e of
