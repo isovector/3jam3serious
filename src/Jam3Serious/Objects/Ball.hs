@@ -126,7 +126,7 @@ data BallAction
 bouncing :: ObjE BallState e -> ObjE BallState (Maybe e)
 bouncing sf = proc (oi, bs) -> do
   let pos = bs_pos bs
-  rims <- friends (\n o -> os_pos =<< bool Nothing (Just o) (has #_Rim n)) -< ()
+  rims <- friends (\_ n o -> os_pos =<< bool Nothing (Just o) (has #_Rim n)) -< ()
   let rimBounce = maybeToEvent $ getFirst $
         flip foldMap rims $ \rim ->
           case pointInCapsule rim (ballCapsule pos) && dot (bs_vel bs) (rim - pos) > 0 of

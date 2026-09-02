@@ -61,6 +61,16 @@ instance Profunctor SF where
   dimap f g sf = arr f >>> sf >>> arr g
 
 
+data Controller = Controller
+  { c_dir :: V2 Double
+  , c_jump :: Event ()
+  , c_shoot :: Event ()
+  , c_pass :: Event ()
+  , c_run :: Bool
+  }
+  deriving stock (Eq, Ord, Show)
+
+
 data Global = Global
   { g_dt :: !DTime
   , g_everyone :: !(Map Name ObjState)
@@ -176,6 +186,7 @@ data ObjState = ObjState
   { os_pos :: !(Maybe (V3 Double))
   , os_collision :: !(Maybe (Capsule Double))
   }
+  deriving stock (Eq, Ord, Show)
 
 class ToObjState a where
   toObjState :: a -> ObjState
@@ -202,7 +213,7 @@ data Capsule a = Capsule
     -- ^ Radius of the capsule
   , c_pos :: !(V3 a)
   }
-  deriving stock (Generic, Generic1, Functor, Foldable, Traversable)
+  deriving stock (Eq, Ord, Show, Generic, Generic1, Functor, Foldable, Traversable)
   deriving Applicative via Generically1 Capsule
 
 

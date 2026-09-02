@@ -10,6 +10,7 @@ import Jam3Serious.Objects.Ball
 import Jam3Serious.Objects.Basket
 import Jam3Serious.Objects.Camera
 import Jam3Serious.Objects.Court
+import Jam3Serious.Objects.Drone
 import Jam3Serious.Objects.Game
 import Jam3Serious.Objects.Player
 import Jam3Serious.Objects.Rim
@@ -58,17 +59,14 @@ appSF = proc i -> do
         ( flip ObjectMap mempty
         $ M.fromList $
             [ (Player T1 $ PlayerNum 0, object (PlayerState (V3 (-1) 0 0) False) $ player playerController)
+            , (Player T1 $ PlayerNum 1, object (PlayerState (V3 (-1) 0 0) False) $ player defense)
             , (Court, object () court)
-            , (Player T2 $ PlayerNum 1, object (PlayerState (V3 1 0 0) False) $ player stupidController)
-            , (Player T2 $ PlayerNum 2, object (PlayerState (V3 1.1 0.1 0) False) $ player stupidController)
-            , (Player T2 $ PlayerNum 3, object (PlayerState (V3 1.1 (-0.1) 0) False) $ player stupidController)
-            , (Player T2 $ PlayerNum 2, object (PlayerState (V3 1.2 0.2 0) False) $ player stupidController)
-            , (Player T2 $ PlayerNum 4, object (PlayerState (V3 1.2 0 0) False) $ player stupidController)
-            , (Player T2 $ PlayerNum 5, object (PlayerState (V3 1.2 (-0.2) 0) False) $ player stupidController)
-            , (Ball, object (ballState (V3 (-8) 1 2) 0) ball)
+            , (Player T2 $ PlayerNum 0, object (PlayerState (V3 1 0 0) False) $ player defense)
+            , (Player T2 $ PlayerNum 1, object (PlayerState (V3 1 0 0) False) $ player defense)
+            , (Ball, object (ballState (V3 0 0 2) 0) ball)
             , (Basket T1, object (V3 (-12) 0 4) $ basket T2 $ V3 1 0 0 )
             , (Basket T2, object (V3 12 0 4) $ basket T1 $ V3 (-1) 0 0)
-            , (Camera, object (CameraState (V3 (-8) 0 0) (50 * 50) 20 Ball) camera)
+            , (Camera, object (CameraState (V3 0 0 2) (50 * 50) 20 Ball) camera)
             , (Game, object () game)
             ] <> do
               (t, o) <- zip [T1, T2] [V3 (-12) 0 4, V3 12 0 4]

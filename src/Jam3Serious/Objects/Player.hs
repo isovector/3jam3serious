@@ -1,4 +1,5 @@
-{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE ViewPatterns                    #-}
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 
 module Jam3Serious.Objects.Player where
 
@@ -11,7 +12,6 @@ import Jam3Serious.Drawing
 import Jam3Serious.Geometry
 import Jam3Serious.Mail
 import Jam3Serious.Objects.Ball
-import Jam3Serious.Objects.Basket
 import Jam3Serious.Objects.Camera
 import Jam3Serious.Prelude
 import SDL.Primitive (fillPie, fillCircle)
@@ -30,14 +30,6 @@ arrows =
     , onPress ScancodeA $ V2 (-1) 0
     , onPress ScancodeD $ V2 1    0
     ]
-
-data Controller = Controller
-  { c_dir :: V2 Double
-  , c_jump :: Event ()
-  , c_shoot :: Event ()
-  , c_pass :: Event ()
-  , c_run :: Bool
-  }
 
 fallingEdge :: SF Bool (Event ())
 fallingEdge = edgeBy (\x y -> bool Nothing (Just ()) $ x && not y) True
@@ -151,8 +143,12 @@ wrapPlayer getCtrls sf = proc (oi, ps) -> do
   (oo, ps') <- sf -< (ctrl, oi, ps)
   accuracy <- jitter -< ()
 
+  team <- myTeam -< oi
+  npos <- netPos -< otherTeam team
+
+
   let pass = PassTo (V3 0 0 0) <$ gate (c_pass ctrl) (ps_hasBall ps)
-      shoot = ShootAt (V3 (-12) 0 4 + accuracy) <$ gate (c_shoot ctrl) (ps_hasBall ps)
+      shoot = ShootAt (npos + accuracy) <$ gate (c_shoot ctrl) (ps_hasBall ps)
 
   couldPickup <- onMail @PickMeUp -< oi
   afterwards <- delayEvent 0.5 -< pass <|> shoot
@@ -354,11 +350,18 @@ nearestTeammate g oi = fromMaybe (error "no teammate?") $ do
     pure (qd mepos pos, os)
 
 
-mkShootBezier :: Global -> ObjInput -> Team -> Bezier Double (V3 Double)
-mkShootBezier g oi t = bezier
-  [ (fromMaybe (error $ "no pos for me " <> show (oi_me oi)) $
-      os_pos =<< M.lookup (oi_me oi) (g_everyone g)) + V3 0 0 shootHeight
-  , netPos g t + V3 0 0 3
-  , netPos g t
-  ]
+netPos :: SF Team (V3 Double)
+netPos = proc t -> do
+  who
+    <- friend (\t n o -> bool Nothing (Just o) $ n == Basket t)
+    -< t
+  returnA -< fromMaybe 0 $ os_pos =<< who
 
+
+myTeam :: SF ObjInput Team
+myTeam = arr $ \oi -> let Player t _ = oi_me oi in t
+
+
+otherTeam :: Team -> Team
+otherTeam T1 = T2
+otherTeam T2 = T1

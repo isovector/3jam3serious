@@ -3,7 +3,7 @@ module Jam3Serious.Audio
   , ALUT.Source
   ) where
 
-import qualified Sound.ALUT as ALUT
+import Sound.ALUT qualified as ALUT
 
 
 loadAudio :: FilePath -> IO (ALUT.Source)

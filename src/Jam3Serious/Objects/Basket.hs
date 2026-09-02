@@ -31,7 +31,7 @@ basket :: Team -> V3 Double -> Obj (V3 Double)
 basket points_for normal = proc (_, pos) -> do
   let bb = basketRect normal $ pos - normal * 0.5
   cam <- getCamera -< ()
-  mball <- friend (\n o -> os_pos =<< bool Nothing (Just o) (n == Ball)) -< ()
+  mball <- friend (\_ n o -> os_pos =<< bool Nothing (Just o) (n == Ball)) -< ()
   ball_vel <- derivative -< fromMaybe 0 mball
 
   let maybe_goal =
@@ -57,12 +57,6 @@ basket points_for normal = proc (_, pos) -> do
         }
     , pos
     )
-
-
-netPos :: Global -> Team -> V3 Double
-netPos g t =
-  fromMaybe (error $ "no net for team " <> show t) $
-    os_pos =<< M.lookup (Basket t) (g_everyone g)
 
 
 netRadius :: Double

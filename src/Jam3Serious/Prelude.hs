@@ -76,10 +76,12 @@ traceEvent (Event a) = traceShowId $ Event a
 traceEvent NoEvent = NoEvent
 
 
-friends :: (Name -> ObjState -> Maybe b) -> SF () [b]
-friends f = global >>> arr (mapMaybe (uncurry f) . M.toList . g_everyone)
+friends :: (a -> Name -> ObjState -> Maybe b) -> SF a [b]
+friends f = proc a -> do
+  g <- global -< ()
+  returnA -< mapMaybe (uncurry $ f a) . M.toList $ g_everyone g
 
-friend :: (Name -> ObjState -> Maybe b) -> SF () (Maybe b)
+friend :: (a -> Name -> ObjState -> Maybe b) -> SF a (Maybe b)
 friend f = friends f >>> arr listToMaybe
 
 
