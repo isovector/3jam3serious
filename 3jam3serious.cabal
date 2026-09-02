@@ -28,6 +28,7 @@ library
       Data.Atlas
       Data.Bezier
       FRP.SFGlobal
+      Jam3Serious.Collisions
       Jam3Serious.Drawing
       Jam3Serious.Geometry
       Jam3Serious.Mail
@@ -35,6 +36,7 @@ library
       Jam3Serious.Objects.Basket
       Jam3Serious.Objects.Camera
       Jam3Serious.Objects.Court
+      Jam3Serious.Objects.Game
       Jam3Serious.Objects.Player
       Jam3Serious.Objects.Rim
       Jam3Serious.Prelude
