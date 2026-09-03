@@ -168,16 +168,6 @@ wrapPlayer getCtrls sf = proc (oi, ps) -> do
             , on pickup $ const $ send Camera RefocusOnMe
             , on (shoot <|> pass) $ send Ball
             ]
-        , oo_commands =
-            on (shoot <|> pass) $ const $ pure $
-              Spawn Ball
-                $ object
-                    (ballState
-                      (ps_pos ps + V3 0 0 1.5)
-                      0
-                      -- (maybe 0 (subtract $ ps_pos ps) (os_pos teammate))
-                    )
-                    ball
         }
       , ps'
         & #ps_hasBall %~ appEndo (

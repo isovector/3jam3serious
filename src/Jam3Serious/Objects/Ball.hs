@@ -1,15 +1,14 @@
 module Jam3Serious.Objects.Ball where
 
-import Data.Bezier
 import Data.Map qualified as M
 import Data.Map.Monoidal.Strict qualified as MM
 import Data.Monoid
-import GHC.Generics
 import Jam3Serious.Objects.Camera
 import Jam3Serious.Drawing
 import Jam3Serious.Geometry
 import Jam3Serious.Mail
 import Jam3Serious.Objects.Court
+import Jam3Serious.Objects.Rim (getRims)
 import Jam3Serious.Prelude
 import Jam3Serious.Collisions
 
@@ -17,13 +16,7 @@ import Jam3Serious.Collisions
 getBall :: SF () (V3 Double)
 getBall = proc _ -> do
   g <- global -< ()
-  returnA -< fromMaybe 999 $ os_pos =<< M.lookup Ball (g_everyone g)
-
-data FollowBezier = FollowBezier
-  { fb_dur :: !Double
-  , fb_bez :: !(Bezier Double (V3 Double))
-  }
-  deriving (Show)
+  returnA -< fromMaybe (trace "no ball" 9999) $ os_pos =<< M.lookup Ball (g_everyone g)
 
 data BallState = BallState
   { bs_pos :: !(V3 Double)
@@ -50,55 +43,9 @@ ballGravity = V3 0 0 (-10)
 ballElasticity :: Double
 ballElasticity = 0.8
 
-motionBall :: Time -> Bezier Double (V3 Double) -> ObjE BallState ()
-motionBall dur bez = fmap (fmap void) $ bouncing $ proc (_, bs) -> do
-  t <- time -< ()
-  done <- after dur () -< ()
-  vel <- derivative -< bs_pos bs
-  cam <- getCamera -< ()
-
-  returnA -<
-    ( ( mempty { oo_output = drawBall cam bs }
-      , bs
-          & #bs_pos .~ runBezier bez (t / dur)
-          & #bs_vel .~ vel
-      )
-    , done
-    )
-
-getBallPos :: ObjE BallState (V3 Double)
-getBallPos = arr $ \(_, bs) -> ((mempty, bs), pure $ bs_pos bs)
-
-ball :: Obj BallState
-ball = doPickup $ foreverSwont $ do
-  e <- swont physicsBall
-  pos <- swont getBallPos
-  case e of
-    PassTo goal -> passTo pos goal
-    ShootAt goal -> shootAt pos goal
-
-
-passTo :: V3 Double -> V3 Double -> ObjSwont BallState ()
-passTo pos goal =
-  swont $ motionBall 1 $ bezier [pos & _z .~ passHeight, goal]
-
-shootAt :: V3 Double -> V3 Double -> ObjSwont BallState ()
-shootAt pos goal = do
-  let start = pos + V3 0 0 shootHeight
-  swont $ motionBall 1 $ bezier
-    [ start
-    , start + (goal - start) / 3 + midControlOffset
-    , start + (goal - start) * (2 / 3) + shootControlOffset
-    , goal
-    ]
-
 shootHeight, passHeight :: Double
 shootHeight = 2.4
 passHeight = 1.7
-
-midControlOffset, shootControlOffset :: V3 Double
-midControlOffset = V3 0 0 4
-shootControlOffset = V3 0 0 3
 
 drawBall :: ToScreen -> BallState -> Output
 drawBall cam bs = mconcat
@@ -109,68 +56,104 @@ drawBall cam bs = mconcat
   ]
 
 
-data BallAction
-  = ShootAt (V3 Double)
-  | PassTo (V3 Double)
-  deriving stock (Eq, Ord, Show)
-
-bouncing :: ObjE BallState e -> ObjE BallState (Maybe e)
-bouncing sf = proc (oi, bs) -> do
+-- | Compute when the ball ought to bounce, and how its velocity ought to
+-- reflect.
+bounces :: SF BallState (Event (V3 Double -> V3 Double))
+bounces = proc bs -> do
   let pos = bs_pos bs
-  rims <- friends (\_ n o -> os_pos =<< bool Nothing (Just o) (has #_Rim n)) -< ()
-  let rimBounce = maybeToEvent $ getFirst $
-        flip foldMap rims $ \rim ->
-          case pointInCapsule rim (ballCapsule pos) && dot (bs_vel bs) (rim - pos) > 0 of
-            True -> pure $ Endo $ reflectAlong $ normalize $ rim - pos
-            False -> mempty
+      vel = bs_vel bs
 
-  wallBounce <- foldMap (\r -> fmap (fmap Endo) $ rect3Bounce r) $ fmap fst courtGeom -< pos
-  let bounce = rimBounce <|> wallBounce
+  wallBounce
+    <- foldMap
+         (\r -> fmap (fmap Endo) $ rect3Bounce r)
+         (fmap fst courtGeom)
+    -< pos
+  rims <- getRims -< ()
 
-  oo <- sf -< (oi, bs)
+  returnA -< fmap appEndo $ asum
+    [ wallBounce
+    , maybeToEvent $ getFirst $ flip foldMap rims $ \rim ->
+        case pointInCapsule rim (ballCapsule pos) && dot vel (rim - pos) > 0 of
+          True -> pure $ Endo $ reflectAlong $ normalize $ rim - pos
+          False -> mempty
+    ]
+
+
+-- | Move the ball according to gravity and its velocity.
+kinematics :: V3 Double -> SF BallState BallState
+kinematics vel0 = proc bs -> do
+  pos0 <- keep -< bs_pos bs
+  dvel <- integral -< ballGravity
+  let vel = vel0 + dvel
+  dpos <- integral -< vel
+
   returnA -<
-    oo
-      & _1 . _2 . #bs_vel %~ appEndo (on bounce $ \f -> f <> Endo (^* ballElasticity))
-      & _2 %~ event (Nothing <$ bounce) (pure . Just)
-
-
-physicsBall :: ObjE BallState BallAction
-physicsBall = fmap (fmap $ (maybe noEvent pure =<<)) $ bouncing $ proc (oi, bs) -> do
-  follow <- onMail @BallAction -< oi
-  cam <- getCamera -< ()
-
-  returnA -<
-    (
-      ( mempty
-          { oo_output = drawBall cam bs
-          }
-      , bs
-          & #bs_vel +~ ballGravity ^* i_dt (oi_input oi)
-          & #bs_pos +~ bs_vel bs ^* i_dt (oi_input oi)
-      )
-    , fmap message follow
+    ( bs
+        & #bs_pos .~ pos0 + dpos
+        & #bs_vel .~ vel
     )
 
-doPickup :: Obj BallState -> Obj BallState
-doPickup sf = proc i@(oi, bs) -> do
-  spawn <- now () -< ()
+-- | Move the ball according to physics (kinematics + bouncing).
+physics :: V3 Double -> SF BallState BallState
+physics vel0 =
+  switch
+    (proc bs -> do
+      bs' <- kinematics vel0 -< bs
+      bounce <- bounces -< bs
+      returnA -<
+        ( bs'
+        , fmap ((^* ballElasticity) . ($ bs_vel bs')) bounce
+        ))
+    physics
+
+
+ballPhysics :: V3 Double -> ObjE BallState Name
+ballPhysics vel0 = proc (oi, bs) -> do
+  cam <- getCamera -< ()
+  bs' <- physics vel0 -< bs
   pickup <- onMail @PickedUp -< oi
-  (oo, bs') <- sf -< i
   g <- global -< ()
   returnA -<
-    ( oo <> mempty
-        { oo_commands = on pickup $ const $ pure Die
+    ( ( mempty
+        { oo_output = drawBall cam bs'
         , oo_outbox = mconcat
             [ broadcastAt
                 (has #_Player)
                 PickMeUp
                 (ballCapsule $ bs_pos bs)
                 (g_everyone g)
-            , on spawn $ const $ send Camera RefocusOnMe
             ]
         }
-    , bs'
+      , bs'
+      )
+    , fmap from pickup
     )
+
+
+ballCarry :: Name -> ObjE BallState (V3 Double)
+ballCarry who = proc (oi, bs) -> do
+  cam <- getCamera -< ()
+  action <- onMail @BallAction -< oi
+  pos <- namedFriend who os_pos -< ()
+  let bs' = bs & #bs_pos .~ fromMaybe 999 pos
+  returnA -<
+    ( ( mempty { oo_output = drawBall cam bs' }
+      , bs'
+      )
+    , fmap (unAction . message) action
+    )
+
+
+ball :: Obj BallState
+ball = go 0
+  where
+    go v = switch (ballPhysics v) $ \a -> switch (ballCarry a) go
+
+
+data BallAction
+  = ShootAt { unAction :: V3 Double }
+  | PassTo { unAction :: V3 Double }
+  deriving stock (Eq, Ord, Show)
 
 
 broadcastAt
@@ -185,13 +168,5 @@ broadcastAt p a cap oss = MM.fromList $ do
   guard $ p who
   cap' <- maybeToList $ os_collision os
   guard $ capsuleInCapsule cap cap'
-
   pure (who, pure $ toDyn a)
-
-
-ballState :: V3 Double -> V3 Double -> BallState
-ballState pos dir = BallState
-  { bs_pos = pos
-  , bs_vel = dir
-  }
 

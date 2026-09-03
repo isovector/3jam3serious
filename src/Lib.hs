@@ -63,7 +63,7 @@ appSF = proc i -> do
             , (Court, object () court)
             , (Player T2 $ PlayerNum 0, object (PlayerState (V3 1 0 0) False) $ player defense)
             , (Player T2 $ PlayerNum 1, object (PlayerState (V3 1 0 0) False) $ player defense)
-            , (Ball, object (ballState (V3 0 0 2) 0) ball)
+            , (Ball, object (BallState (V3 0 0 2) 0) ball)
             , (Basket T1, object (V3 (-12) 0 4) $ basket T2 $ V3 1 0 0 )
             , (Basket T2, object (V3 12 0 4) $ basket T1 $ V3 (-1) 0 0)
             , (Camera, object (CameraState (V3 0 0 2) (50 * 50) 20 Ball) camera)

@@ -21,3 +21,8 @@ rim = proc (_, pos) -> do
     , pos
     )
 
+
+getRims :: SF () [V3 Double]
+getRims = friends $ \_ n o ->
+  os_pos =<< bool Nothing (Just o) (has #_Rim n)
+

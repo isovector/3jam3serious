@@ -31,6 +31,9 @@ lift sf = SFG $ arr fst >>> sf
 global :: SFG g a g
 global = SFG $ arr snd
 
+switch :: SFG g a (b, Event c) -> (c -> SFG g a b) -> SFG g a b
+switch = coerce Y.switch
+
 dSwitch :: SFG g a (b, Event c) -> (c -> SFG g a b) -> SFG g a b
 dSwitch = coerce Y.dSwitch
 

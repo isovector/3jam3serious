@@ -84,6 +84,9 @@ friends f = proc a -> do
 friend :: (a -> Name -> ObjState -> Maybe b) -> SF a (Maybe b)
 friend f = friends f >>> arr listToMaybe
 
+namedFriend :: Name -> (ObjState -> Maybe b) -> SF a (Maybe b)
+namedFriend n f = friend (\_ n' os -> bool Nothing (f os) (n == n'))
+
 
 onceUntil :: SF (Event a, Event clear) (Event a)
 onceUntil = proc (ea, eclear) -> do
