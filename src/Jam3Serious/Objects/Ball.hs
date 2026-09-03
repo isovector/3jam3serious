@@ -136,14 +136,23 @@ ballCarry :: Name -> ObjE BallState (V3 Double)
 ballCarry who = proc (oi, bs) -> do
   cam <- getCamera -< ()
   action <- onMail @BallAction -< oi
-  pos <- namedFriend who os_pos -< ()
-  let bs' = bs & #bs_pos .~ fromMaybe (error "ballCarry no friend") pos
+  pos <- fmap (fromMaybe (error "ballCarry no friend")) $ namedFriend who os_pos -< ()
+  let bs' = bs & #bs_pos .~ pos + V3 0 0 shootHeight
   returnA -<
     ( ( mempty { oo_output = drawBall cam bs' }
       , bs'
       )
-    , fmap (unAction . message) action
+    , fmap (computeVel (bs_pos bs') . message) action
     )
+
+
+computeVel :: V3 Double -> BallAction -> V3 Double
+computeVel src (ShootAt dst) =
+  let d = traceShowId $ min 6 $ distance (src ^. _xy) (dst ^. _xy)
+      t = d * 0.20
+      V3 vx vy vz = (dst - src) ^/ t
+   in V3 vx vy $ vz - (ballGravity ^. _z * t / 2)
+computeVel _ (PassTo x) = x
 
 
 ball :: Obj BallState
