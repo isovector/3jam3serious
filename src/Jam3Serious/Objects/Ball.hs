@@ -109,6 +109,7 @@ physics vel0 =
 
 ballPhysics :: V3 Double -> ObjE BallState Name
 ballPhysics vel0 = proc (oi, bs) -> do
+  begin <- now () -< ()
   cam <- getCamera -< ()
   bs' <- physics vel0 -< bs
   pickup <- onMail @PickedUp -< oi
@@ -122,6 +123,7 @@ ballPhysics vel0 = proc (oi, bs) -> do
                 PickMeUp
                 (ballCapsule $ bs_pos bs)
                 (g_everyone g)
+            , on begin $ const $ send Camera RefocusOnMe
             ]
         }
       , bs'
