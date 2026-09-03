@@ -61,7 +61,7 @@ windowHeight = 600
 projection :: M44 Double
 projection =
   perspective
-    (15 * pi / 180)
+    (45 * pi / 180)
     (windowWidth / windowHeight)
     5
     35
@@ -94,7 +94,7 @@ mkToScreen camPos = ToScreen $ \(V3 wx wy wz) -> do
 
 
 camEye :: V3 Double
-camEye = V3 0 30 20
+camEye = V3 0 20 10
 
 
 camMat :: M44 Double
