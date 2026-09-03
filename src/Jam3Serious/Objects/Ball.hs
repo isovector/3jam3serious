@@ -137,7 +137,7 @@ ballCarry who = proc (oi, bs) -> do
   cam <- getCamera -< ()
   action <- onMail @BallAction -< oi
   pos <- namedFriend who os_pos -< ()
-  let bs' = bs & #bs_pos .~ fromMaybe 999 pos
+  let bs' = bs & #bs_pos .~ fromMaybe (error "ballCarry no friend") pos
   returnA -<
     ( ( mempty { oo_output = drawBall cam bs' }
       , bs'

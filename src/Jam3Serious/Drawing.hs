@@ -33,7 +33,7 @@ drawCapsule cam (Capsule t b r xyz) color = raw $ \renderer _ _ -> do
       (fmap round -> flr, _, sf) = toScreen cam $ xyz & _z .~ 0
       rt = round $ st * r
       rb = round $ sb * r
-  fillCircle renderer flr (round $ sf * r) $ V4 0 0 0 255
+  fillCircle renderer flr (round $ sf * r) $ V4 0 0 0 128
   pixel renderer (fmap round $ screenPos $ toScreen cam xyz) color
   line renderer (top - V2 rt 0) (bot - V2 rb 0) color
   line renderer (top + V2 rt 0) (bot + V2 rb 0) color
