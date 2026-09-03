@@ -44,8 +44,9 @@ camera = proc (oi, cs) -> do
     ( mempty
     , cs
         & #cs_focus %~ appEndo (on refocus $ Endo . const . from)
-        & #cs_pos %~ \pos ->
-          case qd (screenPos $ toScreen cam focus) (screenPos $ toScreen cam pos) > cs_deadzone cs of
+        & #cs_pos %~ \pos -> do
+          let scr = toScreen cam
+          case qd (screenPos $ scr focus) (screenPos $ scr pos) > cs_deadzone cs of
             False -> pos
             True -> pos + min diff (cs_speed cs * i_dt (oi_input oi)) *^ normalize (focus - pos)
 
