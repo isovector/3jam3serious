@@ -2,9 +2,9 @@
 
 module Jam3Serious.Objects.Court where
 
-import Jam3Serious.Prelude
+import Jam3Serious.Collisions
 import Jam3Serious.Drawing
-import Jam3Serious.Objects.Basket
+import Jam3Serious.Prelude
 
 
 courtGeom :: [(Rect3 Double, V4 Word8)]

@@ -1,13 +1,12 @@
 module Jam3Serious.Objects.Basket where
 
-import Data.Map qualified as M
 import Jam3Serious.Collisions
 import Jam3Serious.Drawing
-import Jam3Serious.Geometry
-import Jam3Serious.Objects.Camera
-import Jam3Serious.Prelude
 import Jam3Serious.Mail
+import Jam3Serious.Objects.Ball (getBall)
+import Jam3Serious.Objects.Camera
 import Jam3Serious.Objects.Game
+import Jam3Serious.Prelude
 import SDL.Primitive
 
 
@@ -16,33 +15,13 @@ basketWidth = 40
 basketHeight = 20
 
 
-basketRect :: V3 Double -> V3 Double -> Rect3 Double
-basketRect normal pos = do
-  let n = normalize normal
-      up = V3 0 0 1
-      uDir = normalize $ cross up n
-      vDir = normalize $ cross n uDir
-      u = uDir ^* 1.83 / 2
-      v = vDir ^* 1.07 / 2
-  Rect3 pos u v
-
-
 basket :: Team -> V3 Double -> Obj (V3 Double)
 basket points_for normal = proc (_, pos) -> do
   let bb = basketRect normal $ pos - normal * 0.5
   cam <- getCamera -< ()
-  mball <- friend (\_ n o -> os_pos =<< bool Nothing (Just o) (n == Ball)) -< ()
-  ball_vel <- derivative -< fromMaybe 0 mball
-
-  let maybe_goal =
-        maybeToEvent $ do
-          ball <- mball
-          case pointInCapsule (pos - V3 0 0 0.1) (ballCapsule ball) && dot (V3 0 0 (-1)) ball_vel > 0 of
-            True -> pure ()
-            False -> Nothing
-
-  goal <- onlyEvery 2 -< maybe_goal
-
+  ball <- getBall -< ()
+  through <- edge -< pos ^. _z > ball ^. _z
+  let goal = gate through $ qd (ball & _z .~ 0) (pos & _z .~ 0) <= netRadius * netRadius
 
   returnA -<
     ( mempty

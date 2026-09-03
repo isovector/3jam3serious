@@ -14,9 +14,10 @@ import Jam3Serious.Prelude
 import Jam3Serious.Collisions
 
 
-getBall :: Global -> Maybe (V3 Double)
-getBall g =
-  os_pos =<< M.lookup Ball (g_everyone g)
+getBall :: SF () (V3 Double)
+getBall = proc _ -> do
+  g <- global -< ()
+  returnA -< fromMaybe 999 $ os_pos =<< M.lookup Ball (g_everyone g)
 
 data FollowBezier = FollowBezier
   { fb_dur :: !Double
