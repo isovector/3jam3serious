@@ -4,10 +4,8 @@ import Jam3Serious.Collisions
 import Jam3Serious.Drawing
 import Jam3Serious.Mail
 import Jam3Serious.Objects.Ball (getBall)
-import Jam3Serious.Objects.Camera
 import Jam3Serious.Objects.Game
 import Jam3Serious.Prelude
-import SDL.Primitive
 
 
 basketWidth, basketHeight :: Num a => a
@@ -28,9 +26,6 @@ basket points_for normal = proc (_, pos) -> do
         { oo_output =
             mconcat
               [ billboard cam bb (V4 128 128 0 255) (DDDepth $ view _y pos)
-              , flip raw (DDDepth $ view _y pos) $ \r _ _ -> do
-                  ellipse r
-                    (fmap round $ screenPos $ toScreen cam pos) 40 10 $ V4 255 0 0 255
               ]
         , oo_outbox = on (Goal points_for <$ goal) $ send Game
         }
