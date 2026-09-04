@@ -59,10 +59,10 @@ appSF = proc i -> do
         ( flip ObjectMap mempty
         $ M.fromList $
             [ (Player T1 $ PlayerNum 0, object (PlayerState (V3 (-1) 0 0) False) $ player playerController)
-            , (Player T1 $ PlayerNum 1, object (PlayerState (V3 (-1) 0 0) False) $ player defense)
+            -- , (Player T1 $ PlayerNum 1, object (PlayerState (V3 (-1) 0 0) False) $ player defense)
             , (Court, object () court)
-            , (Player T2 $ PlayerNum 0, object (PlayerState (V3 1 0 0) False) $ player defense)
-            , (Player T2 $ PlayerNum 1, object (PlayerState (V3 1 0 0) False) $ player defense)
+            -- , (Player T2 $ PlayerNum 0, object (PlayerState (V3 1 0 0) False) $ player defense)
+            -- , (Player T2 $ PlayerNum 1, object (PlayerState (V3 1 0 0) False) $ player defense)
             , (Ball, object (BallState (V3 0 0 2) 0) ball)
             , (Basket T1, object (V3 (-12) 0 4) $ basket T2 $ V3 1 0 0 )
             , (Basket T2, object (V3 12 0 4) $ basket T1 $ V3 (-1) 0 0)
