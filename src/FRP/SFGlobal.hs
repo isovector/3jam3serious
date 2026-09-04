@@ -52,6 +52,9 @@ iPre a = SFG $ arr fst >>> Y.iPre a
 now :: b -> SFG g a (Event b)
 now = coerce Y.now
 
+notYet :: SFG g (Event a) (Event a)
+notYet = SFG $ arr fst >>> Y.notYet
+
 derivative :: (Fractional s, Y.VectorSpace a s) => SFG g a a
 derivative = SFG $ arr fst >>> Y.derivative
 

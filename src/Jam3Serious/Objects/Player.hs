@@ -114,7 +114,7 @@ motionPlayer dur bez = proc (_, oi, ps) -> do
 
 
 jitter :: SF () (V3 Double)
-jitter = fmap (\xy -> 0 & _xy .~ xy) $ noiseR (-0.25, 0.25) (mkStdGen 0)
+jitter = fmap (\xy -> 0 & _xy .~ xy) $ noiseR (-0.5, 0.5) (mkStdGen 0)
 
 
 doCollision :: SF (Name, V3 Double) (V3 Double)

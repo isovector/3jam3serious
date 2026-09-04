@@ -70,7 +70,7 @@ bounces = proc bs -> do
     -< pos
   rims <- getRims -< ()
 
-  returnA -< fmap appEndo $ asum
+  notYet -< fmap appEndo $ asum
     [ wallBounce
     , maybeToEvent $ getFirst $ flip foldMap rims $ \rim ->
         case pointInCapsule rim (ballCapsule pos) && dot vel (rim - pos) > 0 of
