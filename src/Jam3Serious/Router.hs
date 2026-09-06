@@ -70,7 +70,7 @@ ystackFrame = fmap fst . go mempty []
     go :: b -> [(b, Frame Y.SF a b)] -> Frame Y.SF a b -> Y.SF a (b, Event (Stacking Y.SF a b))
     go acc rest sf0 =
       Y.kSwitch
-        sf0
+        (fmap (first (<> acc)) sf0)
         (arr $ \(_, (b, e)) -> fmap (b,) e)
         (\sf0' (b, cmd) ->
           case (cmd, rest) of
