@@ -19,7 +19,8 @@ router'
     -> Y.SF (Input, ObjectMap ObjState)
           (ObjectMap (ObjOutput, ObjState))
 router' objs0 =
-  Y.pSwitch @ObjectMap
+  Y.pSwitch
+          @ObjectMap
           @(Input, ObjectMap ObjState)
           @(ObjInput, Global)
           @(ObjOutput, ObjState)
@@ -60,4 +61,32 @@ decodeOutput n oo = mconcat
   , flip foldMap (MM.toList $ oo_outbox oo) $ \(to, dyns) -> Endo $
       #om_messages <>~ MM.singleton to (fmap (Mail n) dyns)
   ]
+
+
+-- | Push new stack frames on top of paused SFs.
+ystackFrame :: forall a b. Monoid b => Frame Y.SF a b -> Y.SF a b
+ystackFrame sf00 = go mempty [] sf00 >>> arr fst
+  where
+    go :: b -> [(b, Frame Y.SF a b)] -> Frame Y.SF a b -> Y.SF a (b, Event (Stacking Y.SF a b))
+    go acc rest sf0 =
+      Y.kSwitch
+        sf0
+        (arr $ \(_, (b, e)) -> fmap (b,) e)
+        (\sf0' (b, cmd) ->
+          case (cmd, rest) of
+            (Pop, (_, sf') : rest') -> go (foldMap fst rest') rest' sf'
+            (Pop, []) -> go acc rest sf0
+            (Push sf', _) -> go (b <> acc) ((b, sf0') : rest) sf'
+        )
+
+yunstack :: Frame (SFG g) a b -> Frame Y.SF (a, g) b
+yunstack
+  = fmap (fmap $ fmap $ \case
+      Push x -> Push $ yunstack x
+      Pop -> Pop
+    )
+  . runGlobal
+
+stackFrame :: Monoid b => Frame (SFG g) a b -> SFG g a b
+stackFrame = SFG . ystackFrame . yunstack
 

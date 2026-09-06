@@ -245,3 +245,11 @@ data Rect3 a = Rect3
   }
   deriving stock (Eq, Ord, Show, Functor, Foldable, Traversable)
 
+
+data Stacking a b c
+  = Push (Frame a b c)
+  | Pop
+  deriving stock Functor
+
+type Frame a b c = a b (c, Event (Stacking a b c))
+
