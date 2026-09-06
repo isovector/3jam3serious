@@ -142,6 +142,7 @@ data ObjOutput = ObjOtuput
 data Command
   = Spawn !Name !Object
   | Die
+  | Breakaway (Frame Y.SF Input Output)
   deriving stock (Generic)
 
 

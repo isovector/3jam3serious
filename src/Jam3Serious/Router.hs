@@ -1,5 +1,6 @@
 module Jam3Serious.Router where
 
+import Control.Lens (preview)
 import Jam3Serious.Prelude
 import Data.Map.Strict qualified as M
 import Data.Map.Monoidal.Strict qualified as MM
@@ -9,15 +10,18 @@ import Data.Coerce
 
 router
     :: ObjectMap Object
-    -> Y.SF Input Output
-router objs0 = Y.loopPre mempty $
-  router' objs0 >>> arr (foldMap (oo_output . fst) &&& fmap snd)
+    -> Frame Y.SF Input Output
+router objs0 = Y.loopPre mempty $ proc i -> do
+  o <- router' objs0 -< i
+  returnA -< do
+    let (oo, evs) = foldMap ((oo_output &&& mapMaybe (preview #_Breakaway) . oo_commands) . fst) o
+    ((oo , maybe NoEvent (Event . Push) $ listToMaybe evs), fmap snd o)
 
 
 router'
     :: ObjectMap Object
     -> Y.SF (Input, ObjectMap ObjState)
-          (ObjectMap (ObjOutput, ObjState))
+            (ObjectMap (ObjOutput, ObjState))
 router' objs0 =
   Y.pSwitch
           @ObjectMap
@@ -58,6 +62,7 @@ decodeOutput n oo = mconcat
   [ flip foldMap (oo_commands oo) $ \case
       Spawn n' obj -> Endo $ #om_objects <>~ M.singleton n' obj
       Die -> Endo $ #om_objects %~ M.delete n
+      Breakaway{} -> mempty
   , flip foldMap (MM.toList $ oo_outbox oo) $ \(to, dyns) -> Endo $
       #om_messages <>~ MM.singleton to (fmap (Mail n) dyns)
   ]
@@ -69,15 +74,23 @@ ystackFrame = fmap fst . go mempty []
   where
     go :: b -> [(b, Frame Y.SF a b)] -> Frame Y.SF a b -> Y.SF a (b, Event (Stacking Y.SF a b))
     go acc rest sf0 =
-      Y.kSwitch
+      Y.dkSwitch
         (fmap (first (<> acc)) sf0)
         (arr $ \(_, (b, e)) -> fmap (b,) e)
         (\sf0' (b, cmd) ->
           case (cmd, rest) of
-            (Pop, (_, sf') : rest') -> go (foldMap fst rest') rest' sf'
-            (Pop, []) -> go acc rest sf0
-            (Push sf', _) -> go (b <> acc) ((b, sf0') : rest) sf'
+            (Pop, (_, sf') : rest') -> go (foldMap fst rest') rest' $ suppress sf'
+            (Pop, []) -> go acc rest $ suppress sf0'
+            (Push sf', _) -> go (b <> acc) ((b, sf0') : rest) $ suppress sf'
         )
+
+    -- When a frame is (re)started as the result of a switch, 'dkSwitch' hands
+    -- us the SF frozen at the switching sample, so its first step re-runs that
+    -- sample. Without this, resuming a paused frame re-emits whatever
+    -- 'Stacking' command triggered the switch (e.g. immediately re-'Push'ing
+    -- right after a 'Pop'). Suppress the event on that first re-run sample.
+    suppress :: Frame Y.SF a b -> Frame Y.SF a b
+    suppress sf = sf >>> Y.identity *** Y.notYet
 
 yunstack :: Frame (SFG g) a b -> Frame Y.SF (a, g) b
 yunstack

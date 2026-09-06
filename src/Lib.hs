@@ -55,7 +55,7 @@ appSF = proc i -> do
         SDL.rendererDrawColor renderer SDL.$= V4 100 149 237 255
         SDL.clear renderer
   objs
-    <- router
+    <- ystackFrame $ router
         ( flip ObjectMap mempty
         $ M.fromList $
             [ (Player T1 $ PlayerNum 0, object (PlayerState (V3 (-1) 0 0) False) $ player playerController)
