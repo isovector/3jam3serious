@@ -65,7 +65,7 @@ decodeOutput n oo = mconcat
 
 -- | Push new stack frames on top of paused SFs.
 ystackFrame :: forall a b. Monoid b => Frame Y.SF a b -> Y.SF a b
-ystackFrame sf00 = go mempty [] sf00 >>> arr fst
+ystackFrame = fmap fst . go mempty []
   where
     go :: b -> [(b, Frame Y.SF a b)] -> Frame Y.SF a b -> Y.SF a (b, Event (Stacking Y.SF a b))
     go acc rest sf0 =
