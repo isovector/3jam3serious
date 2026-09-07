@@ -5,8 +5,10 @@ module Jam3Serious.Types
   , V2(..)
   , V3(..)
   , V4(..)
+  , MidiMessage(..)
   ) where
 
+import Euterpea.IO.MIDI.MidiIO (OutputDeviceID, deliverMidiEvent, MidiMessage(..))
 import Jam3Serious.Audio
 import FRP.SFGlobal
 import Data.Atlas
@@ -104,7 +106,7 @@ data DrawDepth
   deriving stock (Eq, Ord, Show)
 
 newtype Output = Output
-  { runOutput :: MonoidalMap DrawDepth (SDL.Renderer -> Gfx -> Soundbank -> IO ())
+  { runOutput :: MonoidalMap DrawDepth (OutputDeviceID -> SDL.Renderer -> Gfx -> Soundbank -> IO ())
   }
   deriving newtype (Semigroup, Monoid)
 
@@ -113,7 +115,12 @@ raw
     :: (SDL.Renderer -> Gfx -> Soundbank -> IO ())
     -> DrawDepth
     -> Output
-raw f dd = Output $ MM.singleton dd f
+raw f dd = Output $ MM.singleton dd $ const f
+
+
+midi :: MidiMessage -> Output
+midi m = Output $ MM.singleton DDGUI $ \odev _ _ _ -> deliverMidiEvent odev (0, m)
+
 
 data Gfx = Gfx
   { gfx_player :: Atlas

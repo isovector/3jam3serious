@@ -25,6 +25,8 @@ pkgs.haskell.lib.buildStackProject {
     pkgs.glew
     pkgs.openal
     pkgs.freealut
+    pkgs.portmidi
+    pkgs.alsa-lib
     SDL2_gfx_symbolic
   ];
 }

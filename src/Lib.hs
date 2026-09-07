@@ -1,16 +1,16 @@
 module Lib (main) where
 
-import Jam3Serious.Audio
 import Control.Exception (bracket, bracket_)
 import Data.Atlas
 import Data.Map qualified as M
 import Data.Text (pack)
+import Euterpea.IO.MIDI.MidiIO (initializeMidi , terminateMidi)
 import FRP.Yampa qualified as Y
+import Jam3Serious.Audio
 import Jam3Serious.Objects.Ball
 import Jam3Serious.Objects.Basket
 import Jam3Serious.Objects.Camera
 import Jam3Serious.Objects.Court
-import Jam3Serious.Objects.Drone
 import Jam3Serious.Objects.Game
 import Jam3Serious.Objects.Player
 import Jam3Serious.Objects.Rim
@@ -28,7 +28,7 @@ windowTitle = "3jam3serious"
 main :: IO ()
 main
   = ALUT.withProgNameAndArgs ALUT.runALUT $ \_ _ ->
-    bracket_ SDL.initializeAll SDL.quit $ do
+    bracket_ (initializeMidi >> SDL.initializeAll) (terminateMidi >> SDL.quit) $ do
   window <- SDL.createWindow
     (pack windowTitle)
     SDL.defaultWindow

@@ -40,6 +40,8 @@ dependencies:
 - arrows
 - random
 - ALUT
+- Euterpea
+- HCodecs
 
 ghc-options:
 - -Wall

@@ -63,6 +63,8 @@ library
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints
   build-depends:
       ALUT
+    , Euterpea
+    , HCodecs
     , JuicyPixels
     , Yampa
     , aeson
@@ -102,6 +104,8 @@ executable 3jam3serious-exe
   build-depends:
       3jam3serious
     , ALUT
+    , Euterpea
+    , HCodecs
     , JuicyPixels
     , Yampa
     , aeson
@@ -143,6 +147,8 @@ test-suite tests
   build-depends:
       3jam3serious
     , ALUT
+    , Euterpea
+    , HCodecs
     , JuicyPixels
     , QuickCheck
     , Yampa

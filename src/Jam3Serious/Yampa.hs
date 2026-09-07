@@ -2,15 +2,17 @@ module Jam3Serious.Yampa
   ( runSF
   ) where
 
-import Data.Foldable
-import Data.Map.Monoidal.Strict qualified as MM
 import Control.Monad
+import Data.Foldable
 import Data.IORef
+import Data.Map.Monoidal.Strict qualified as MM
 import Data.Time.Clock.System (SystemTime, getSystemTime, systemSeconds, systemNanoseconds)
+import Euterpea.IO.MIDI.MidiIO (unsafeOutputID)
 import FRP.Yampa (DTime, reactimate)
 import FRP.Yampa qualified as Y
 import Jam3Serious.Types
 import qualified SDL
+
 
 
 floatSeconds :: SystemTime -> Double
@@ -36,7 +38,7 @@ runSF renderer gfx audio sf = do
       fmap ((dt,) . Just) $ sampleInput dt
     )
     (\_ out -> do
-      fold (fmap snd $ MM.toList $ runOutput out) renderer gfx audio
+      fold (fmap snd $ MM.toList $ runOutput out) (unsafeOutputID 2) renderer gfx audio
       SDL.present renderer
       fmap (any isQuitEvent) SDL.pollEvents
     )
